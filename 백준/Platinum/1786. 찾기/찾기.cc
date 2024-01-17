@@ -4,57 +4,60 @@
 
 using namespace std;
 
-vector<int> getPi(string &P) {
-	int m = P.size();
-	
+vector<int> getPi(const string &toFind) {
+	int m = toFind.size();
+
 	vector<int> pi(m, 0);
 
 	int begin = 1, matched = 0;
 
-	while (begin + matched <= m) {
-		if (P[begin + matched] == P[matched]) {
-			matched++;
+	while (begin + matched < m) {
+		if (toFind[begin + matched] == toFind[matched]) {
+			++matched;
 			pi[begin + matched - 1] = matched;
+
+			continue;
 		}
-		else {
-			if (matched == 0) {
-				begin++;
-			}
-			else {
-				begin += matched - pi[matched - 1];
-				matched = pi[matched - 1];
-			}
+
+		if (matched == 0) {
+			begin++;
+			continue;
 		}
+
+		begin += matched - pi[matched - 1];
+		matched = pi[matched - 1];
 	}
 
 	return pi;
 }
 
-vector<int> kmp(string &T, string &P) {
-	int n = T.size();
-	int m = P.size();
+vector<int> kmp(const string &str, const string &toFind) {
+	int n = str.size(), m = toFind.size();
+
 	vector<int> result;
-	vector<int> pi = getPi(P);
+
+	vector<int> pi = getPi(toFind);
 
 	int begin = 0, matched = 0;
 
 	while (begin <= n - m) {
-		if (matched < m && T[begin + matched] == P[matched]) {
-			matched++;
+		if (matched < m && str[begin + matched] == toFind[matched]) {
+			++matched;
 
 			if (matched == m) {
 				result.push_back(begin);
 			}
+
+			continue;
 		}
-		else {
-			if (matched == 0) {
-				begin++;
-			}
-			else {
-				begin += matched - pi[matched - 1];
-				matched = pi[matched - 1];
-			}
+
+		if (matched == 0) {
+			++begin;
+			continue;
 		}
+
+		begin += matched - pi[matched - 1];
+		matched = pi[matched - 1];
 	}
 
 	return result;
@@ -70,13 +73,14 @@ int main() {
 	getline(cin, T);
 	getline(cin, P);
 
-	vector<int> answer = kmp(T, P);
+	vector<int> results = kmp(T, P);
 
-	cout << answer.size() << '\n';
-	for (int index : answer) {
-		cout << index + 1 << " ";
+	cout << results.size() << '\n';
+
+	for (int result : results) {
+		cout << result + 1 << " ";
 	}
 	cout << '\n';
-	
+
 	return 0;
 }
