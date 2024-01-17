@@ -1,13 +1,12 @@
 #include <iostream>
-#include <algorithm>
-#include <utility>
+#include <string>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
 #define MAX 40000
 
-int n;
 int arr[MAX];
 
 int main() {
@@ -15,31 +14,27 @@ int main() {
 	cin.tie(0);
 	cout.tie(0);
 
+	int n;
 	cin >> n;
 
 	for (int i = 0; i < n; i++) {
-		int temp;
-		cin >> temp;
-
-		arr[i] = temp;
+		cin >> arr[i];
 	}
 
-	vector<int> lis;
-	lis.push_back(arr[0]);
+	vector<int> temp;
+	temp.push_back(arr[0]);
 
 	for (int i = 1; i < n; i++) {
-		if (lis.back() < arr[i]) {
-			lis.push_back(arr[i]);
+		if (temp.back() < arr[i]) {
+			temp.push_back(arr[i]);
 		}
 		else {
-			int index = lower_bound(lis.begin(), lis.end(), arr[i]) - lis.begin();
-			lis[index] = arr[i];
+			int idx = lower_bound(temp.begin(), temp.end(), arr[i]) - temp.begin();
+			temp[idx] = arr[i];
 		}
 	}
 
-	int answer = lis.size();
-
-	cout << answer << '\n';
+	cout << temp.size() << '\n';
 
 	return 0;
 }
