@@ -1,114 +1,105 @@
 #include <iostream>
+#include <algorithm>
 #include <vector>
 
 using namespace std;
 
-int parent[51];
+#define MAX 50
 
-// know : 0
+int N, M;
+int knowTruthCount;
+bool knowTruth[MAX + 1];
+vector<int> party[MAX];
 
-int find(int a)
-{
-	if (parent[a] == a)
-	{
-		return a;
+bool isBaseCase() {
+	if (knowTruthCount == 0) {
+		cout << M << '\n';
+
+		return true;
 	}
-	return parent[a] = find(parent[a]);
+
+	return false;
 }
 
-void union_find(int a, int b)
-{
-	int aRoot = find(a);
-	int bRoot = find(b);
+void input() {
+	cin >> N >> M;
+	cin >> knowTruthCount;
 
-	if (aRoot == bRoot)
-	{
-		return;
+	for (int i = 0; i < knowTruthCount; i++) {
+		int num;
+		cin >> num;
+
+		knowTruth[num] = true;
 	}
 
-	if (aRoot < bRoot)
-	{
-		parent[bRoot] = aRoot;
-	}
-	else
-	{
-		parent[aRoot] = bRoot;
+	for (int i = 0; i < M; i++) {
+		int cnt;
+		cin >> cnt;
+
+		for (int j = 0; j < cnt; j++) {
+			int num;
+			cin >> num;
+
+			party[i].push_back(num);
+		}
 	}
 }
 
-int main()
-{
+bool isContainsTruth(const vector<int>& tempParty) {
+	for (int num : tempParty) {
+		if (knowTruth[num]) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void makeAllTruth(const vector<int>& tempParty) {
+	for (int num : tempParty) {
+		knowTruth[num] = true;
+	}
+}
+
+void allPossibleTruth() {
+	for (int i = 0; i < M; i++) {
+		const vector<int> presentParty = party[i];
+
+		if (isContainsTruth(presentParty)) {
+			makeAllTruth(presentParty);
+		}
+	}
+}
+
+int solve() {
+	for (int i = 0; i < M; i++) {
+		allPossibleTruth();
+	}
+
+	int result = 0;
+	for (int i = 0; i < M; i++) {
+		vector<int> presentParty = party[i];
+
+		if (!isContainsTruth(presentParty)) {
+			result++;
+		}
+	}
+
+	return result;
+}
+
+int main() {
 	ios_base::sync_with_stdio(0);
 	cin.tie(0);
+	cout.tie(0);
 
-	int N, M;
+	input();
 
-	cin >> N >> M;
-
-	for (int i = 1; i <= N; i++)
-	{
-		parent[i] = i;
+	if (isBaseCase()) {
+		return 0;
 	}
 
-	int knowCnt;
-
-	cin >> knowCnt;
-
-	for (int i = 0; i < knowCnt; i++)
-	{
-		int t;
-
-		cin >> t;
-		parent[t] = 0;
-	}
-
-	vector<int> party[50];
-	for (int i = 0; i < M; i++)
-	{
-		int come;
-
-		cin >> come;
-		if (come > 1)
-		{
-			int first;
-
-			cin >> first;
-			party[i].push_back(first);
-
-			for (int j = 1; j < come; j++)
-			{
-				int temp;
-
-				cin >> temp;
-
-				union_find(first, temp);
-				party[i].push_back(temp);
-			}
-		}
-		else
-		{
-			int temp;
-
-			cin >> temp;
-			party[i].push_back(temp);
-		}
-	}
-
-	int answer = M;
-
-	for (int i = 0; i < M; i++)
-	{
-		for (int temp : party[i])
-		{
-			if (find(temp) == 0)
-			{
-				answer--;
-				break;
-			}
-		}
-	}
-
-	cout << answer << '\n';
-
+	cout << solve() << '\n';
+	
 	return 0;
 }
