@@ -1,82 +1,96 @@
 #include <iostream>
-#include <string>
 #include <stack>
+#include <string>
 #include <utility>
 #include <algorithm>
 
 using namespace std;
 
-int main() {
-	ios_base::sync_with_stdio(0);
-	cin.tie(0);
-	cout.tie(0);
+string full;
+string explosion;
 
-	string input;
-	string exp;
+void input() 
+{
+	cin >> full;
+	cin >> explosion;
+}
 
-	cin >> input;
-	cin >> exp;
-
+string solve()
+{
 	stack<pair<char, int>> st;
-	
-	int size = input.size();
-	int expSize = exp.size();
 
-	for (int i = 0; i < size; i++) {
-		char c = input[i];
+	const int fullSize = full.size();
+	const int expSize = explosion.size();
 
-		if (st.empty()) {
-			if (exp[0] == c) {
-				st.push({ c, 1 });
+	for (int i = 0; i < fullSize; i++)
+	{
+		const char present = full[i];
+
+		if (st.empty())
+		{
+			if (present == explosion[0])
+			{
+				st.push({ present, 1 });
 			}
-			else {
-				st.push({ c, -1 });
+			else
+			{
+				st.push({ present, -1 });
 			}
 		}
-		else {
-			if (st.top().second == -1) {
-				if (exp[0] == c) {
-					st.push({ c, 1 });
-				}
-				else {
-					st.push({ c, -1 });
-				}
+		else
+		{
+			const int index = st.top().second;
+			if (index != -1 && present == explosion[index])
+			{
+				st.push({ present, index + 1 });
 			}
-			else {
-				if (exp[st.top().second] == c) {
-					st.push({ c, st.top().second + 1 });
+			else
+			{
+				if (present == explosion[0])
+				{
+					st.push({ present, 1 });
 				}
-				else if (exp[0] == c) {
-					st.push({ c, 1 });
-				}
-				else {
-					st.push({ c, -1 });
+				else
+				{
+					st.push({ present, -1 });
 				}
 			}
 		}
 
-		if (st.top().second == expSize) {
-			for (int j = 0; j < expSize; j++) {
+		if (!st.empty() && st.top().second == expSize)
+		{
+			for (int j = 0; j < expSize; j++)
+			{
 				st.pop();
 			}
 		}
 	}
 
-	if (st.empty()) {
-		cout << "FRULA" << '\n';
+	if (st.empty())
+	{
+		return "FRULA";
 	}
-	else {
-		string result = "";
-
-		while (!st.empty()) {
-			result += st.top().first;
-			st.pop();
-		}
-
-		reverse(result.begin(), result.end());
-
-		cout << result << '\n';
+	
+	string result = "";
+	while (!st.empty())
+	{
+		result += st.top().first;
+		st.pop();
 	}
+	reverse(result.begin(), result.end());
+
+	return result;
+}
+
+int main() 
+{
+	ios_base::sync_with_stdio(0);
+	cin.tie(0);
+	cout.tie(0);
+
+	input();
+	
+	cout << solve() << '\n';
 
 	return 0;
 }
