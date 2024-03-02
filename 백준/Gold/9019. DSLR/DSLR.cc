@@ -1,129 +1,103 @@
 #include <iostream>
 #include <string>
-#include <vector>
 #include <queue>
 #include <utility>
 using namespace std;
 
-int operD(int temp)
-{
-	temp *= 2;
-	temp %= 10000;
+#define MAX 10000
 
-	return temp;
+vector<bool> visited;
+
+int D(int num) {
+	return num * 2 % 10000;
 }
 
-int operS(int temp)
-{
+int S(int num) {
+	if (num == 0) {
+		return 9999;
+	}
+	return num - 1;
+}
+
+int L(int num) {
+	int fourth = num / 1000;
+	num %= 1000;
+	int third = num / 100;
+	num %= 100;
+	int second = num / 10;
+	int first = num % 10;
 	
-	if (temp == 0)
-	{
-		temp = 9999;
-	}
-	else
-	{
-		temp--;
-	}
-
-	return temp;
+	return third * 1000 + second * 100 + first * 10 + fourth;
 }
 
-int operL(int temp)
-{
-	int result = (temp % 1000 * 10) + temp / 1000;
+int R(int num) {
+	int fourth = num / 1000;
+	num %= 1000;
+	int third = num / 100;
+	num %= 100;
+	int second = num / 10;
+	int first = num % 10;
 
-	return result;
+	return first * 1000 + fourth * 100 + third * 10 + second;
 }
 
-int operR(int temp)
-{
-	int result = (temp / 10) + temp % 10 * 1000;
+string bfs(int start, int end) {
+	visited[start] = true;
+	queue<pair<int, string>> q;
+	q.push({ start, "" });
 
-	return result;
-}
-
-vector<string> visited;
-vector<bool> visited2;
-
-string bfs(int a, int b)
-{
-	queue<int> q;
-
-	visited[a] = "";
-	visited2[a] = true;
-	q.push(a);
-
-	while (!q.empty())
-	{
-		int present = q.front();
-		int next;
+	while (!q.empty()) {
+		int present = q.front().first;
+		string opers = q.front().second;
 		q.pop();
 
-		if (present == b)
-		{
-			return visited[present];
+		if (present == end) {
+			return opers;
 		}
 
-		next = operD(present);
-		if (!visited2[next])
-		{
-			visited2[next] = true;
-			visited[next] = visited[present] + "D";
-			q.push(next);
+		int d = D(present);
+		if (!visited[d]) {
+			visited[d] = true;
+			q.push({ d, opers + 'D' });
 		}
 
-		next = operS(present);
-		if (!visited2[next])
-		{
-			visited2[next] = true;
-			visited[next] = visited[present] + "S";
-			q.push(next);
+		int s = S(present);
+		if (!visited[s]) {
+			visited[s] = true;
+			q.push({ s, opers + 'S' });
 		}
 
-		next = operL(present);
-		if (!visited2[next])
-		{
-			visited2[next] = true;
-			visited[next] = visited[present] + "L";
-			q.push(next);
+		int l = L(present);
+		if (!visited[l]) {
+			visited[l] = true;
+			q.push({ l, opers + 'L' });
 		}
 
-		next = operR(present);
-		if (!visited2[next])
-		{
-			visited2[next] = true;
-			visited[next] = visited[present] + "R";
-			q.push(next);
+		int r = R(present);
+		if (!visited[r]) {
+			visited[r] = true;
+			q.push({ r, opers + 'R' });
 		}
 	}
 
 	return "";
 }
 
-int main()
-{
+int main() {
 	ios_base::sync_with_stdio(0);
-	cout.tie(0);
 	cin.tie(0);
+	cout.tie(0);
 
-	int test_case;
-
-	cin >> test_case;
-
-	for (int test = 0; test < test_case; test++)
-	{
-		int a, b;
-		string answer;
-
-		cin >> a >> b;
-
-		visited = vector<string>(10000, "");
-		visited2 = vector<bool>(10000, false);
-
-		answer = bfs(a, b);
-
-		cout << answer << '\n';
+	int T;
+	cin >> T;
+	for (int test = 0; test < T; test++) {
+		int A, B;
+		cin >> A >> B;
+		
+		visited = vector<bool>(MAX, false);
+		string result = bfs(A, B);
+		cout << result << '\n';
 	}
-	
+
 	return 0;
 }
