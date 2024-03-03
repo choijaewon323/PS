@@ -1,8 +1,11 @@
 #include <iostream>
+#include <vector>
+#include <utility>
+#include <algorithm>
 #include <map>
-#include <string>
-
 using namespace std;
+
+map<string, int> categories;
 
 int main() {
 	ios_base::sync_with_stdio(0);
@@ -11,35 +14,28 @@ int main() {
 
 	int T;
 	cin >> T;
-
-	for (int t = 0; t < T; t++) {
+	for (int test = 0; test < T; test++) {
 		int n;
-
 		cin >> n;
+
+		categories.clear();
 
 		if (n == 0) {
 			cout << 0 << '\n';
 			continue;
 		}
 
-		map<string, int> mp;
-
 		for (int i = 0; i < n; i++) {
-			string cloth;
-			string category;
+			string name, category;
+			cin >> name >> category;
 
-			cin >> cloth >> category;
-
-			mp[category]++;
+			categories[category]++;
 		}
-
-		map<string, int>::iterator iter;
 
 		int result = 1;
-		for (iter = mp.begin(); iter != mp.end(); iter++) {
+		for (auto iter = categories.begin(); iter != categories.end(); iter++) {
 			result *= (iter->second) + 1;
 		}
-
 		cout << result - 1 << '\n';
 	}
 
