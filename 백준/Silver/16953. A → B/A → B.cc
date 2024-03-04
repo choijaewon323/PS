@@ -1,56 +1,44 @@
 #include <iostream>
-#include <queue>
-#include <utility>
-#include <string>
+#include <vector>
 using namespace std;
 
-typedef long long ll;
+#define INF 1000000000000000ll
+typedef long long LL;
 
-ll bfs(ll start, ll end)
-{
-	queue<pair<ll, ll>> q;
+LL A, B;
 
-	q.push(make_pair(start, 1));
-
-	while (!q.empty())
-	{
-		pair<ll, ll> present = q.front();
-		q.pop();
-
-		if (present.first > end)
-		{
-			continue;
-		}
-
-		if (present.first == end)
-		{
-			return present.second;
-		}
-
-		// multiply 2
-		q.push(make_pair(present.first * 2, present.second + 1));
-
-		// add 1
-		ll temp = present.first;
-		string tempStr = to_string(temp);
-		tempStr += "1";
-		temp = stoll(tempStr);
-
-		q.push(make_pair(temp, present.second + 1));
+LL solve(LL num) {
+	if (num > B) {
+		return INF;
 	}
+	if (num == B) {
+		return 0;
+	}
+	LL result = INF;
+	
+	// x 2
+	result = min(result, solve(num * 2) + 1);
 
-	return -1;
+	// add a
+	result = min(result, solve(num * 10 + 1) + 1);
+
+	return result;
 }
 
-int main()
-{
-	ll a, b;
+int main() {
+	ios::sync_with_stdio(0);
+	cin.tie(0);
+	cout.tie(0);
 
-	cin >> a >> b;
+	cin >> A >> B;
+	
+	LL result = solve(A);
 
-	ll result = bfs(a, b);
-
-	cout << result << '\n';
+	if (result >= INF) {
+		cout << -1 << '\n';
+	} else {
+		cout << result + 1 << '\n';
+	}
 
 	return 0;
 }
