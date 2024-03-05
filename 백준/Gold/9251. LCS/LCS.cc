@@ -1,31 +1,44 @@
 #include <iostream>
+#include <vector>
 #include <string>
 #include <algorithm>
 using namespace std;
-int dp[1001][1001];
-int func(string& s1, string& s2, int index1, int index2) {
-	if (dp[index1][index2] != -1) {
-		return dp[index1][index2];
-	}
-	if (s1.size() == index1 || s2.size() == index2) {
-		return 0;
-	}
-	if (s1[index1] == s2[index2]) {
-		return dp[index1][index2] = 1 + func(s1, s2, index1 + 1, index2 + 1);
-	}
-	return dp[index1][index2] = max(func(s1, s2, index1 + 1, index2), func(s1, s2, index1, index2 + 1));
-}
+
+#define MAX 1000
+#define MAX 1000
+
+int dp[MAX + 1][MAX + 1];
+
 int main() {
-	ios_base::sync_with_stdio(false);
-	cout.tie(0);
+	ios::sync_with_stdio(0);
 	cin.tie(0);
-	for (int i = 0; i < 1001; i++) {
-		for (int j = 0; j < 1001; j++) {
-			dp[i][j] = -1;
+	cout.tie(0);
+
+	string a, b;
+	cin >> a >> b;
+
+	int aSize = a.size();
+	int bSize = b.size();
+
+	for (int i = 0; i <= aSize; i++) {
+		for (int j = 0; j <= bSize; j++) {
+			if (i == 0 || j == 0) {
+				dp[i][j] = 0;
+			} else if (a[i - 1] == b[j - 1]) {
+				dp[i][j] = dp[i - 1][j - 1] + 1;
+			} else {
+				dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
+			}
 		}
 	}
-	string s1, s2;
-	cin >> s1 >> s2;
-	cout << func(s1, s2, 0, 0) << '\n';
+
+	int result = 0;
+	for (int i = 0; i <= aSize; i++) {
+		for (int j = 0; j <= bSize; j++) {
+			result = max(result, dp[i][j]);
+		}
+	}
+	cout << result << '\n';
+
 	return 0;
 }
