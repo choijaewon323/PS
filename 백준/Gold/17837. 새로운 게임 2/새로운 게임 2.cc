@@ -1,61 +1,84 @@
 #include <iostream>
-#include <vector>
-#include <utility>
-#include <stack>
 #include <algorithm>
-
+#include <vector>
+#include <stack>
+#include <utility>
 using namespace std;
 
-#define WHITE 0
-#define RED 1
-#define BLUE 2
-
+#define MAX 12
+#define HORSE_MAX 10
 #define RIGHT 1
 #define LEFT 2
 #define UP 3
 #define DOWN 4
+#define WHITE 0
+#define RED 1
+#define BLUE 2
 
-typedef struct _horse
-{
+struct Horse {
 	int y;
 	int x;
 	int direction;
-} horse;
+};
 
-horse horses[11];
-int board[12][12];
-stack<int> horsePosition[12][12];
-int n, k;
+int N, K;
+int board[MAX + 1][MAX + 1];
+Horse horseInfo[HORSE_MAX + 1];
+stack<int> state[MAX + 1][MAX + 1];
 
-pair<int, int> nextPosition(int y, int x, int direction)
-{
-	int resultY = y, resultX = x;
-
-	switch (direction)
-	{
-	case RIGHT:
-		resultX++;
-		break;
-	case LEFT:
-		resultX--;
-		break;
-
-	case UP:
-		resultY--;
-		break;
-
-	case DOWN:
-		resultY++;
-		break;
+void input() {
+	cin >> N >> K;
+	for (int y = 1; y <= N; y++) {
+		for (int x = 1; x <= N; x++) {
+			cin >> board[y][x];
+		}
 	}
-
-	return { resultY, resultX };
+	for (int i = 1; i <= K; i++) {
+		int y, x, d;
+		cin >> y >> x >> d;
+		horseInfo[i] = { y, x, d };
+		state[y][x].push(i);
+	}
 }
 
-int oppositeDirection(int direction)
-{
-	switch (direction)
-	{
+bool isEnd() {
+	for (int y = 1; y <= N; y++) {
+		for (int x = 1; x <= N; x++) {
+			if (state[y][x].size() >= 4) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+pair<int, int> nextPos(int y, int x, int direction) {
+	switch (direction) {
+	case RIGHT:
+		x++;
+		break;
+	case LEFT:
+		x--;
+		break;
+	case UP:
+		y--;
+		break;
+	case DOWN:
+		y++;
+		break;
+	}
+	return { y, x };
+}
+
+bool inRange(int y, int x) {
+	if (1 <= y && y <= N && 1 <= x && x <= N) {
+		return true;
+	}
+	return false;
+}
+
+int opposite(int direction) {
+	switch (direction) {
 	case RIGHT:
 		return LEFT;
 	case LEFT:
@@ -65,271 +88,95 @@ int oppositeDirection(int direction)
 	case DOWN:
 		return UP;
 	}
+	return -1;
 }
 
-bool inRange(int y, int x)
-{
-	if (0 <= y && y < n && 0 <= x && x < n)
-	{
-		return true;
-	}
-	return false;
-}
-
-void input()
-{
-	cin >> n >> k;
-
-	for (int y = 0; y < n; y++)
-	{
-		for (int x = 0; x < n; x++)
-		{
-			cin >> board[y][x];
-		}
-	}
-
-	for (int i = 1; i <= k; i++)
-	{
-		int y, x, d;
-
-		cin >> y >> x >> d;
-		horses[i] = { y - 1, x - 1, d };
-		horsePosition[y - 1][x - 1].push(i);
-	}
-}
-
-bool isFour()
-{
-	// check whether four
-	for (int y = 0; y < n; y++)
-	{
-		for (int x = 0; x < n; x++)
-		{
-			if (horsePosition[y][x].size() >= 4)
-			{
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-void moveHorse(int horseNum)
-{
-	horse present = horses[horseNum];
+void move(int horseNum, bool twice) {
+	vector<int> horses;	// 앞부터 위에 있는 것
+	Horse present = horseInfo[horseNum];
 	int y = present.y;
 	int x = present.x;
 	int direction = present.direction;
-	vector<int> tempHorses;
 
-	// pop from stack
-	while (!(horsePosition[y][x].empty()))
-	{
-		int temp = horsePosition[y][x].top();
-		horsePosition[y][x].pop();
+	while (!state[y][x].empty()) {
+		int temp = state[y][x].top();
+		state[y][x].pop();
 
-		tempHorses.push_back(temp);
-
-		if (temp == horseNum)
-		{
+		if (temp == horseNum) {
+			horses.push_back(temp);
 			break;
 		}
+		horses.push_back(temp);
 	}
-
-	// next position
-	pair<int, int> nextPos = nextPosition(y, x, direction);
-	int nextY = nextPos.first;
-	int nextX = nextPos.second;
-
-
-	// move
-	if (inRange(nextY, nextX))
-	{
-		int nextColor = board[nextY][nextX];
-
-		switch (nextColor)
-		{
-		case WHITE:
-			reverse(tempHorses.begin(), tempHorses.end());
-
-			for (int h : tempHorses)
-			{
-				horsePosition[nextY][nextX].push(h);
-				horses[h].y = nextY;
-				horses[h].x = nextX;
+	pair<int, int> next = nextPos(y, x, direction);
+	if (inRange(next.first, next.second)) {
+		if (board[next.first][next.second] == WHITE) {
+			for (int i = horses.size() - 1; i >= 0; i--) {
+				int num = horses[i];
+				horseInfo[num].y = next.first;
+				horseInfo[num].x = next.second;
+				state[next.first][next.second].push(num);
 			}
-
-			break;
-
-		case RED:
-			for (int h : tempHorses)
-			{
-				horsePosition[nextY][nextX].push(h);
-				horses[h].y = nextY;
-				horses[h].x = nextX;
+		} else if (board[next.first][next.second] == RED) {
+			for (int i = 0; i < horses.size(); i++) {
+				int num = horses[i];
+				horseInfo[num].y = next.first;
+				horseInfo[num].x = next.second;
+				state[next.first][next.second].push(num);
 			}
-
-			break;
-
-		case BLUE:
-			// 1. change direction
-			horses[horseNum].direction = oppositeDirection(direction);
-			
-			pair<int, int> next = nextPosition(y, x, horses[horseNum].direction);
-			bool in = inRange(next.first, next.second);
-			
-			// 2. if next is not blue, move
-			if (in && board[next.first][next.second] != BLUE)
-			{
-				switch (board[next.first][next.second])
-				{
-				case WHITE:
-					reverse(tempHorses.begin(), tempHorses.end());
-
-					for (int h : tempHorses)
-					{
-						horsePosition[next.first][next.second].push(h);
-						horses[h].y = next.first;
-						horses[h].x = next.second;
-					}
-					break;
-				
-				case RED:
-					for (int h : tempHorses)
-					{
-						horsePosition[next.first][next.second].push(h);
-						horses[h].y = next.first;
-						horses[h].x = next.second;
-					}
-
-					break;
+		} else if (board[next.first][next.second] == BLUE) {
+			if (!twice) {
+				horseInfo[horseNum].direction = opposite(direction);
+				for (int i = horses.size() - 1; i >= 0; i--) {
+					int num = horses[i];
+					state[y][x].push(num);
 				}
-			}
-
-			// 2.1 if next is blue or out, no move
-			if ((in && board[next.first][next.second] == BLUE) || !in)
-			{
-				// empty
-				reverse(tempHorses.begin(), tempHorses.end());
-
-				for (int h : tempHorses)
-				{
-					horsePosition[y][x].push(h);
-					horses[h].y = y;
-					horses[h].x = x;
+				move(horseNum, true);
+			} else {
+				for (int i = horses.size() - 1; i >= 0; i--) {
+					int num = horses[i];
+					state[y][x].push(num);
 				}
-			}
-
-			break;
-		}
-	}
-	else
-	{
-		// 1. change direction
-		horses[horseNum].direction = oppositeDirection(direction);
-
-		pair<int, int> next = nextPosition(y, x, horses[horseNum].direction);
-		bool in = inRange(next.first, next.second);
-
-		// 2. if next is not blue, move
-		if (in && board[next.first][next.second] != BLUE)
-		{
-			switch (board[next.first][next.second])
-			{
-			case WHITE:
-				reverse(tempHorses.begin(), tempHorses.end());
-
-				for (int h : tempHorses)
-				{
-					horsePosition[next.first][next.second].push(h);
-					horses[h].y = next.first;
-					horses[h].x = next.second;
-				}
-				break;
-
-			case RED:
-				for (int h : tempHorses)
-				{
-					horsePosition[next.first][next.second].push(h);
-					horses[h].y = next.first;
-					horses[h].x = next.second;
-				}
-
-				break;
 			}
 		}
-
-		// 2.1 if next is blue or out, no move
-		if ((in && board[next.first][next.second] == BLUE) || !in)
-		{
-			// empty
-			reverse(tempHorses.begin(), tempHorses.end());
-
-			for (int h : tempHorses)
-			{
-				horsePosition[y][x].push(h);
-				horses[h].y = y;
-				horses[h].x = x;
+	} else {	// blue
+		if (!twice) {
+			horseInfo[horseNum].direction = opposite(direction);
+			for (int i = horses.size() - 1; i >= 0; i--) {
+				int num = horses[i];
+				state[y][x].push(num);
+			}
+			move(horseNum, true);
+		} else {
+			for (int i = horses.size() - 1; i >= 0; i--) {
+				int num = horses[i];
+				state[y][x].push(num);
 			}
 		}
 	}
 }
 
-void print()
-{
-	for (int y = 0; y < n; y++)
-	{
-		for (int x = 0; x < n; x++)
-		{
-			cout << horsePosition[y][x].size() << " ";
+int solve() {
+	for (int turn = 1; turn <= 1000; turn++) {
+		for (int h = 1; h <= K; h++) {
+			// move
+			move(h, false);
+
+			// check
+			if (isEnd()) {
+				return turn;
+			}
 		}
-		cout << '\n';
 	}
-	cout << '\n';
+	return -1;
 }
 
-int main()
-{
+int main() {
 	ios_base::sync_with_stdio(0);
 	cin.tie(0);
-
-	int answer = -1;
-	bool correct = false;
+	cout.tie(0);
 
 	input();
-
-	for (int turn = 1; turn <= 1000; turn++)
-	{
-		for (int h = 1; h <= k; h++)
-		{
-
-			// 1. move
-			moveHorse(h);
-
-			// 2. check four
-			if (isFour())
-			{
-				correct = true;
-				answer = turn;
-				break;
-			}
-		}
-
-		if (correct)
-		{
-			break;
-		}
-	}
-
-	if (correct)
-	{
-		cout << answer << '\n';
-	}
-	else
-	{
-		cout << -1 << '\n';
-	}
-
+	cout << solve() << '\n';
 	return 0;
 }
