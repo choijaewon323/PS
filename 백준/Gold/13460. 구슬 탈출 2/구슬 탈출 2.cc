@@ -1,283 +1,187 @@
 #include <iostream>
-#include <utility>
 #include <vector>
-#include <algorithm>
-
+#include <queue>
 using namespace std;
 
-int N, M;
-
-#define BLANK '.'
-#define WALL '#'
+#define INF 1000000000
 #define HOLE 'O'
+#define WALL '#'
+#define EMPTY '.'
 #define RED 'R'
 #define BLUE 'B'
-
-#define LEFT 1
+#define LEFT 0
+#define RIGHT 1
 #define UP 2
-#define RIGHT 3
-#define DOWN 4
+#define DOWN 3
 
-#define MAX 10000
+struct Ball {
+	int redY;
+	int redX;
+	int blueY;
+	int blueX;
+};
 
-pair<int, int> nextPos(vector<vector<char>>& board, int y, int x, int direction)
-{
-	if (board[y][x] == HOLE)
-	{
-		return { y, x };
+int N, M;
+vector<vector<char>> board;
+Ball init;
+
+void input() {
+	cin >> N >> M;
+	board = vector<vector<char>>(N, vector<char>(M));
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < M; x++) {
+			cin >> board[y][x];
+			
+			if (board[y][x] == RED) {
+				board[y][x] = EMPTY;
+				init.redY = y;
+				init.redX = x;
+			} else if (board[y][x] == BLUE) {
+				board[y][x] = EMPTY;
+				init.blueY = y;
+				init.blueX = x;
+			}
+		}
 	}
+}
 
-	switch (direction)
-	{
+pair<int, int> nextPos(int y, int x, int direction) {
+	switch (direction) {
 	case LEFT:
-		while (true)
-		{
-			if (board[y][x - 1] == BLANK)
-			{
-				x--;
-			}
-			else if (board[y][x - 1] == HOLE)
-			{
-				x--;
-				break;
-			}
-			else
-			{
-				break;
-			}
-		}
-
-		break;
-	case UP:
-		while (true)
-		{
-			if (board[y - 1][x] == BLANK)
-			{
-				y--;
-			}
-			else if (board[y - 1][x] == HOLE)
-			{
-				y--;
-				break;
-			}
-			else
-			{
-				break;
-			}
-		}
-
+		x--;
 		break;
 	case RIGHT:
-		while (true)
-		{
-			if (board[y][x + 1] == BLANK)
-			{
-				x++;
-			}
-			else if (board[y][x + 1] == HOLE)
-			{
-				x++;
-				break;
-			}
-			else
-			{
-				break;
-			}
-		}
-
+		x++;
+		break;
+	case UP:
+		y--;
 		break;
 	case DOWN:
-		while (true)
-		{
-			if (board[y + 1][x] == BLANK)
-			{
-				y++;
-			}
-			else if (board[y + 1][x] == HOLE)
-			{
-				y++;
-				break;
-			}
-			else
-			{
-				break;
-			}
-		}
-
+		y++;
 		break;
 	}
-
 	return { y, x };
 }
 
-int solution(vector<vector<char>> board, int stage, pair<int, int> red, pair<int, int> blue)
-{
-	if (stage > 10)
-	{
-		return MAX;
+pair<int, int> moveOneBall(int y, int x, int direction, pair<int, int> oppo) {
+	pair<int, int> present = { y, x };
+	while (true) {
+		pair<int, int> next = nextPos(present.first, present.second, direction);
+
+		char state = board[next.first][next.second];
+
+		if (state == '#') {
+			return present;
+		}
+
+		if (state == 'O') {
+			return { -1, -1 };
+		}
+
+		if (next.first == oppo.first && next.second == oppo.second) {
+			return present;
+		}
+
+		present = next;
 	}
-
-	int answer = MAX;
-	for (int direction = 1; direction <= 4; direction++)
-	{
-		vector<vector<char>> tempBoard = board;
-		pair<int, int> redNext = red;
-		pair<int, int> blueNext = blue;
-
-		bool redHole = false;
-		bool blueHole = false;
-		bool redMove = false;
-		bool blueMove = false;
-
-		// 1. red move
-		redNext = nextPos(tempBoard, red.first, red.second, direction);
-
-		if (redNext != red)
-		{
-			if (tempBoard[redNext.first][redNext.second] == HOLE)
-			{
-				redHole = true;
-				redMove = true;
-				tempBoard[red.first][red.second] = BLANK;
-			}
-			else
-			{
-				redMove = true;
-				tempBoard[red.first][red.second] = BLANK;
-				tempBoard[redNext.first][redNext.second] = RED;
-			}
-		}
-
-		// 2. blue move
-		blueNext = nextPos(tempBoard, blue.first, blue.second, direction);
-
-		if (blueNext != blue)
-		{
-			if (tempBoard[blueNext.first][blueNext.second] == HOLE)
-			{
-				blueHole = true;
-				blueMove = true;
-				tempBoard[blue.first][blue.second] = BLANK;
-			}
-			else
-			{
-				blueMove = true;
-				tempBoard[blue.first][blue.second] = BLANK;
-				tempBoard[blueNext.first][blueNext.second] = BLUE;
-			}
-		}
-
-		// 3. if red no move, red move again
-		pair<int, int> tempRed = redNext;
-			redNext = nextPos(tempBoard, tempRed.first, tempRed.second, direction);
-
-			if (redNext != tempRed)
-			{
-				if (tempBoard[redNext.first][redNext.second] == HOLE)
-				{
-					redHole = true;
-					redMove = true;
-					tempBoard[tempRed.first][tempRed.second] = BLANK;
-				}
-				else
-				{
-					redMove = true;
-					tempBoard[tempRed.first][tempRed.second] = BLANK;
-					tempBoard[redNext.first][redNext.second] = RED;
-				}
-			}
-		
-
-		// 4. if blue no move, blue move again
-		pair<int, int> tempBlue = blueNext;
-			blueNext = nextPos(tempBoard, tempBlue.first, tempBlue.second, direction);
-
-			if (blueNext != blue)
-			{
-				if (tempBoard[blueNext.first][blueNext.second] == HOLE)
-				{
-					blueHole = true;
-					blueMove = true;
-					tempBoard[tempBlue.first][tempBlue.second] = BLANK;
-				}
-				else
-				{
-					blueMove = true;
-					tempBoard[tempBlue.first][tempBlue.second] = BLANK;
-					tempBoard[blueNext.first][blueNext.second] = BLUE;
-				}
-			}
-		
-
-		if (!redMove && !blueMove)
-		{
-			continue;
-		}
-
-		// check hole
-		if (redHole && !blueHole)
-		{
-			// success
-			return stage;
-		}
-		else if ((redHole && blueHole) || (!redHole && blueHole))
-		{
-			// fail
-			continue;
-		}
-		else if (!redHole && !blueHole)
-		{
-			// continue
-			answer = min(answer, solution(tempBoard, stage + 1, redNext, blueNext));
-		}
-	}
-
-	return answer;
 }
 
+Ball move(Ball ball, int direction) {
+	switch (direction) {
+	case LEFT:
+		if (ball.redX <= ball.blueX) {
+			pair<int, int> red = moveOneBall(ball.redY, ball.redX, direction, {ball.blueY, ball.blueX});
+			pair<int, int> blue = moveOneBall(ball.blueY, ball.blueX, direction, red);
+			return { red.first, red.second, blue.first, blue.second };
+		} else {
+			pair<int, int> blue = moveOneBall(ball.blueY, ball.blueX, direction, { ball.redY, ball.redX });
+			pair<int, int> red = moveOneBall(ball.redY, ball.redX, direction, blue);
+			return { red.first, red.second, blue.first, blue.second };
+		}
+		break;
+	case RIGHT:
+		if (ball.redX >= ball.blueX) {
+			pair<int, int> red = moveOneBall(ball.redY, ball.redX, direction, { ball.blueY, ball.blueX });
+			pair<int, int> blue = moveOneBall(ball.blueY, ball.blueX, direction, red);
+			return { red.first, red.second, blue.first, blue.second };
+		} else {
+			pair<int, int> blue = moveOneBall(ball.blueY, ball.blueX, direction, { ball.redY, ball.redX });
+			pair<int, int> red = moveOneBall(ball.redY, ball.redX, direction, blue);
+			return { red.first, red.second, blue.first, blue.second };
+		}
+		break;
+	case UP:
+		if (ball.redY <= ball.blueY) {
+			pair<int, int> red = moveOneBall(ball.redY, ball.redX, direction, { ball.blueY, ball.blueX });
+			pair<int, int> blue = moveOneBall(ball.blueY, ball.blueX, direction, red);
+			return { red.first, red.second, blue.first, blue.second };
+		} else {
+			pair<int, int> blue = moveOneBall(ball.blueY, ball.blueX, direction, { ball.redY, ball.redX });
+			pair<int, int> red = moveOneBall(ball.redY, ball.redX, direction, blue);
+			return { red.first, red.second, blue.first, blue.second };
+		}
+		break;
+	case DOWN:
+		if (ball.redY >= ball.blueY) {
+			pair<int, int> red = moveOneBall(ball.redY, ball.redX, direction, { ball.blueY, ball.blueX });
+			pair<int, int> blue = moveOneBall(ball.blueY, ball.blueX, direction, red);
+			return { red.first, red.second, blue.first, blue.second };
+		} else {
+			pair<int, int> blue = moveOneBall(ball.blueY, ball.blueX, direction, { ball.redY, ball.redX });
+			pair<int, int> red = moveOneBall(ball.redY, ball.redX, direction, blue);
+			return { red.first, red.second, blue.first, blue.second };
+		}
+		break;
+	}
 
-int main()
-{
-	ios_base::sync_with_stdio(0);
-	cin.tie(0);
+	return { -1, -1, -1, -1 };
+}
 
-	cin >> N >> M;
+int func(Ball ball) {
+	queue<pair<Ball, int>> q;
+	
+	q.push({ ball, 0 });
 
-	vector<vector<char>> board(N, vector<char>(M));
+	while (!q.empty()) {
+		Ball presentBall = q.front().first;
+		int presentCnt = q.front().second;
+		q.pop();
 
-	pair<int, int> red, blue;
+		if (presentCnt == 10) {
+			continue;
+		}
 
-	for (int y = 0; y < N; y++)
-	{
-		for (int x = 0; x < M; x++)
-		{
-			char temp;
-
-			cin >> temp;
-
-			board[y][x] = temp;
-
-			if (temp == RED)
-			{
-				red = { y, x };
+		for (int i = 0; i < 4; i++) {
+			Ball next = move(presentBall, i);
+			
+			if (next.blueY == -1) {
+				continue;
 			}
-			if (temp == BLUE)
-			{
-				blue = { y,x };
+
+			if (next.redY == -1) {
+				return presentCnt + 1;
 			}
+
+			q.push({ next, presentCnt + 1 });
 		}
 	}
 
-	int answer = solution(board, 1, red, blue);
+	return -1;
+}
 
-	if (answer == MAX)
-	{
-		cout << -1 << '\n';
-	}
-	else
-	{
-		cout << answer << '\n';
-	}
+int solve() {
+	int result = func(init);
+
+	return result;
+}
+
+int main() {
+	ios_base::sync_with_stdio(0);
+	cin.tie(0);
+	cout.tie(0);
+
+	input();
+	cout << solve() << '\n';
 
 	return 0;
 }
