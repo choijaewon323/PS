@@ -21,11 +21,6 @@ struct Compare {
 int section[MAX + 1];
 int n, m, r;
 vector<Edge> edges[MAX + 1];
-bool visited[MAX + 1];
-
-bool compare(Edge &a, Edge &b) {
-	return a.weight < b.weight;
-}
 
 void input() {
 	ios_base::sync_with_stdio(0);
@@ -40,9 +35,6 @@ void input() {
 		cin >> a >> b >> l;
 		edges[a].push_back({ b, l });
 		edges[b].push_back({ a, l });
-	}
-	for (int i = 1; i <= n; i++) {
-		sort(edges[i].begin(), edges[i].end(), compare);
 	}
 }
 
@@ -75,20 +67,6 @@ int dijkstra(int start) {
 		}
 	}
 
-	return result;
-}
-
-int func(int present, int rest) {
-	int result = section[present];
-	for (Edge &edge : edges[present]) {
-		int next = edge.num;
-		int weight = edge.weight;
-		if (!visited[next] && rest - weight >= 0) {
-			visited[next] = true;
-			result += func(next, rest - weight);
-			visited[next] = false;
-		}
-	}
 	return result;
 }
 
