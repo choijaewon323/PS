@@ -18,7 +18,6 @@ int main() {
 		cin >> arr[i];
 	}
 
-	int answer = 0;
 	vector<int> result;
 	for (int i = 0; i < N; i++) {
 		int present = arr[i];
@@ -36,9 +35,9 @@ int main() {
 				result[index] = present;
 			}
 		}
-
-		answer = max(answer, (int)result.size());
 	}
+
+	int answer = result.size();
 
 	cout << answer << '\n';
 
