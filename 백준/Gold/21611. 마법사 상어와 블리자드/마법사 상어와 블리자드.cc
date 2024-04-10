@@ -1,427 +1,287 @@
 #include <iostream>
-#include <vector>
-#include <utility>
-#include <stack>
 #include <algorithm>
-
+#include <vector>
 using namespace std;
 
-#define UP 0
-#define DOWN 1
-#define LEFT 2
-#define RIGHT 3
+/*
+	크기가 N x N
+	N은 항상 홀수
+	1,1부터 시작
+	마법사 상어는 (N + 1) / 2, (N + 1) / 2 에 있음
 
-int N, M;
-int answer[4];
+	가장 처음 상어가 있는 칸 제외한 나머지 칸에는 구슬
+	하나 들어갈 수 있음
+
+	같은 번호를 가진 구슬이 번호가 연속하는 칸에 있으면,
+	그 구슬을 연속하는 구슬이라고 함
+
+	방향은 위아왼오, 정수 1234로 표현함
+
+*/
+
+#define LEFT 0
+#define DOWN 1
+#define RIGHT 2
+#define UP 3
+
+#define NORTH 1
+#define SOUTH 2
+#define WEST 3
+#define EAST 4
+
 vector<vector<int>> matrix;
+int N, M;
+int one, two, three;
+
+bool inRange(int y, int x) {
+	if (1 <= y && y <= N && 1 <= x && x <= N) {
+		return true;
+	}
+
+	return false;
+}
 
 pair<int, int> nextPos(int y, int x, int direction) {
 	switch (direction) {
+	case LEFT:
+		x--;
+		break;
+	case RIGHT:
+		x++;
+		break;
 	case UP:
 		y--;
 		break;
 	case DOWN:
 		y++;
 		break;
-	case LEFT:
-		x--;
-		break;
-	case RIGHT:
-		x++;
 	}
-
 	return { y, x };
 }
 
-bool inRange(int y, int x) {
-	if (0 <= y && y < N && 0 <= x && x < N) {
-		return true;
+void readOrder() {
+	int y = (N + 1) / 2;
+	int x = (N + 1) / 2;
+	int direction = LEFT;
+	int result = 1;
+	int dist = 1;
+	int cnt = 0;
+
+	while (true) {
+		for (int i = 0; i < dist; i++) {
+			pair<int, int> next = nextPos(y, x, direction);
+			if (!inRange(next.first, next.second)) {
+				return;
+			}
+			y = next.first;
+			x = next.second;
+			matrix[y][x] = result++;
+		}
+		direction++;
+		direction %= 4;
+		cnt++;
+		if (cnt == 2) {
+			cnt = 0;
+			dist++;
+		}
 	}
-	return false;
 }
 
-vector<int> make() {
+void destroy(int d, int s) {
+	int y = (N + 1) / 2;
+	int x = (N + 1) / 2;
+
+	switch (d) {
+	case NORTH:
+		for (int i = 0; i < s; i++) {
+			y--;
+			matrix[y][x] = 0;
+		}
+		break;
+	case SOUTH:
+		for (int i = 0; i < s; i++) {
+			y++;
+			matrix[y][x] = 0;
+		}
+		break;
+	case WEST:
+		for (int i = 0; i < s; i++) {
+			x--;
+			matrix[y][x] = 0;
+		}
+		break;
+	case EAST:
+		for (int i = 0; i < s; i++) {
+			x++;
+			matrix[y][x] = 0;
+		}
+		break;
+	}
+}
+
+vector<int> readByOrder() {
+	int y = (N + 1) / 2;
+	int x = (N + 1) / 2;
+	int direction = LEFT;
 	vector<int> result;
+	int dist = 1;
+	int cnt = 0;
 
-	int startY = N / 2;
-	int startX = N / 2;
-
-	int di[] = { LEFT, DOWN, RIGHT, UP };
-	int index = 0;
-
-	int num = 1;
-
-	for (int cnt = 1; cnt <= N; cnt++) {
-		int nextDirect1 = di[index];
-		index++;
-		index %= 4;
-		int nextDirect2 = di[index];
-		index++;
-		index %= 4;
-
-		// 1
-		for (int i = 0; i < cnt; i++) {
-			pair<int, int> next = nextPos(startY, startX, nextDirect1);
-			
+	while (true) {
+		for (int i = 0; i < dist; i++) {
+			pair<int, int> next = nextPos(y, x, direction);
 			if (!inRange(next.first, next.second)) {
 				return result;
 			}
-
-			result.push_back(matrix[next.first][next.second]);
-
-			startY = next.first;
-			startX = next.second;
-		}
-
-
-		// 2
-		for (int i = 0; i < cnt; i++) {
-			pair<int, int> next = nextPos(startY, startX, nextDirect2);
-
-			if (!inRange(next.first, next.second)) {
-				return result;
-			}
-
-			result.push_back(matrix[next.first][next.second]);
-
-			startY = next.first;
-			startX = next.second;
-		}
-	}
-}
-
-vector<int> traversal() {
-	vector<int> result;
-	int startY = N / 2;
-	int startX = N / 2;
-
-	int di[] = { LEFT, DOWN, RIGHT, UP };
-	int index = 0;
-
-	int num = 1;
-
-	for (int cnt = 1; cnt <= N; cnt++) {
-		int nextDirect1 = di[index];
-		index++;
-		index %= 4;
-		int nextDirect2 = di[index];
-		index++;
-		index %= 4;
-
-		// 1
-		for (int i = 0; i < cnt; i++) {
-			pair<int, int> next = nextPos(startY, startX, nextDirect1);
-
-			if (!inRange(next.first, next.second)) {
-				return result;
-			}
-
-			if (matrix[next.first][next.second] != 0) {
-				result.push_back(matrix[next.first][next.second]);
-			}
-
-			startY = next.first;
-			startX = next.second;
-		}
-
-
-		// 2
-		for (int i = 0; i < cnt; i++) {
-			pair<int, int> next = nextPos(startY, startX, nextDirect2);
-
-			if (!inRange(next.first, next.second)) {
-				return result;
-			}
-
-			if (matrix[next.first][next.second] != 0) {
-				result.push_back(matrix[next.first][next.second]);
-			}
-
-			startY = next.first;
-			startX = next.second;
-		}
-	}
-}
-
-vector<vector<int>> fill(vector<int> temp) {
-	vector<vector<int>> result(N, vector<int>(N));
-
-	int tempIndex = 0;
-	int startY = N / 2;
-	int startX = N / 2;
-
-	int di[] = { LEFT, DOWN, RIGHT, UP };
-	int index = 0;
-
-	int num = 1;
-
-	for (int cnt = 1; cnt <= N; cnt++) {
-		int nextDirect1 = di[index];
-		index++;
-		index %= 4;
-		int nextDirect2 = di[index];
-		index++;
-		index %= 4;
-
-		// 1
-		for (int i = 0; i < cnt; i++) {
-			pair<int, int> next = nextPos(startY, startX, nextDirect1);
-
-			if (!inRange(next.first, next.second)) {
-				return result;
-			}
-
-			if (tempIndex < temp.size()) {
-				result[next.first][next.second] = temp[tempIndex];
-				tempIndex++;
-			}
-			else {
-				result[next.first][next.second] = 0;
-			}
-
-			startY = next.first;
-			startX = next.second;
-		}
-
-
-		// 2
-		for (int i = 0; i < cnt; i++) {
-			pair<int, int> next = nextPos(startY, startX, nextDirect2);
-
-			if (!inRange(next.first, next.second)) {
-				return result;
-			}
-
-			if (tempIndex < temp.size()) {
-				result[next.first][next.second] = temp[tempIndex];
-				tempIndex++;
-			}
-			else {
-
-
-				result[next.first][next.second] = 0;
-			}
-
-			startY = next.first;
-			startX = next.second;
-		}
-	}
-}
-
-void print() {
-	for (int y = 0; y < N; y++) {
-		for (int x = 0; x < N; x++) {
-			cout << matrix[y][x] << " ";
-		}
-		cout << '\n';
-	}
-	cout << '\n';
-}
-
-void magic(int d, int s) {
-	int startY = N / 2;
-	int startX = N / 2;
-
-	for (int i = 0; i < s; i++) {
-		pair<int, int> next = nextPos(startY, startX, d);
-
-		matrix[next.first][next.second] = 0;
-		startY = next.first;
-		startX = next.second;
-	}
-}
-
-void rebuild() {
-	vector<int> result = traversal();
-
-	vector<vector<int>> tempMatrix = fill(result);
-
-	matrix = tempMatrix;
-}
-
-struct node {
-	int startIndex;
-	int endIndex;
-	int num;
-	int cnt;
-};
-
-vector<int> explodeProcess(vector<int> input) {
-	vector<int> deleted(input.size(), false);
-	vector<int> result;
-	int endSize;
-
-	bool flag = true;
-
-	while (flag) {
-		flag = false;
-		vector<node> exp;
-		node temp = { -1, -1, -1, -1 };
-
-		for (int i = 0; i < input.size(); i++) {
-			if (input[i] == 0) {
-				endSize = i;
-				break;
-			}
-
-			if (deleted[i]) {
-				continue;
-			}
-
-			if (temp.startIndex == -1) {
-				temp = { i, -1, input[i], 1 };
-			}
-			else {
-				if (temp.num == input[i]) {
-					temp.cnt++;
-				}
-				else {
-					if (temp.cnt >= 4) {
-						flag = true;
-						temp.endIndex = i - 1;
-						exp.push_back(temp);
-					}
-					temp = { i, -1, input[i], 1 };
-				}
+			y = next.first;
+			x = next.second;
+			if (matrix[y][x] != 0) {
+				result.push_back(matrix[y][x]);
 			}
 		}
-
-		if (temp.cnt >= 4) {
-			flag = true;
-			temp.endIndex = endSize;
-			exp.push_back(temp);
-		}
-
-		for (node &ex : exp) {
-			answer[ex.num] += ex.cnt;
-
-			for (int i = ex.startIndex; i <= ex.endIndex; i++) {
-				deleted[i] = true;
-			}
-		}
-	}
-
-	for (int i = 0; i < deleted.size(); i++) {
-		if (!deleted[i]) {
-			result.push_back(input[i]);
+		direction++;
+		direction %= 4;
+		cnt++;
+		if (cnt == 2) {
+			cnt = 0;
+			dist++;
 		}
 	}
 
 	return result;
 }
 
-vector<pair<int, int>> changeProcess() {
-	
-	vector<pair<int, int>> result;
-	pair<int, int> temp = { 0, 0 };
-	int startY = N / 2;
-	int startX = N / 2;
+void insert(vector<int>& arr) {
+	int size = arr.size();
+	vector<vector<int>> result(N + 1, vector<int>(N + 1, 0));
 
-	int di[] = { LEFT, DOWN, RIGHT, UP };
+	int y = (N + 1) / 2;
+	int x = (N + 1) / 2;
+	int direction = LEFT;
 	int index = 0;
+	int dist = 1;
+	int cnt = 0;
 
-	for (int cnt = 1; cnt <= N; cnt++) {
-		int nextDirect1 = di[index];
-		index++;
-		index %= 4;
-		int nextDirect2 = di[index];
-		index++;
-		index %= 4;
-
-		// 1
-		for (int i = 0; i < cnt; i++) {
-			pair<int, int> next = nextPos(startY, startX, nextDirect1);
-
+	while (true) {
+		for (int i = 0; i < dist; i++) {
+			pair<int, int> next = nextPos(y, x, direction);
 			if (!inRange(next.first, next.second)) {
-				if (temp.second != 0)
-					result.push_back(temp);
-				return result;
+				matrix = result;
+				return;
 			}
-
-			int tempNum = matrix[next.first][next.second];
-
-			if (tempNum != 0) {
-				if (temp.second == 0) {
-					temp.first = 1;
-					temp.second = tempNum;
-				}
-				else {
-					if (temp.second == tempNum) {
-						temp.first++;
-					}
-					else {
-						result.push_back(temp);
-						temp.first = 1;
-						temp.second = tempNum;
-					}
-				}
+			y = next.first;
+			x = next.second;
+			if (index == size) {
+				matrix = result;
+				return;
 			}
-
-			startY = next.first;
-			startX = next.second;
+			result[y][x] = arr[index++];
 		}
-
-
-		// 2
-		for (int i = 0; i < cnt; i++) {
-			pair<int, int> next = nextPos(startY, startX, nextDirect2);
-
-			if (!inRange(next.first, next.second)) {
-				if (temp.second != 0)
-					result.push_back(temp);
-				return result;
-			}
-
-			int tempNum = matrix[next.first][next.second];
-
-			if (tempNum != 0) {
-				if (tempNum != 0) {
-					if (temp.second == 0) {
-						temp.first = 1;
-						temp.second = tempNum;
-					}
-					else {
-						if (temp.second == tempNum) {
-							temp.first++;
-						}
-						else {
-							result.push_back(temp);
-							temp.first = 1;
-							temp.second = tempNum;
-						}
-					}
-				}
-			}
-
-			startY = next.first;
-			startX = next.second;
+		direction++;
+		direction %= 4;
+		cnt++;
+		if (cnt == 2) {
+			cnt = 0;
+			dist++;
 		}
 	}
 }
 
-void explode() {
-	vector<int> temp = make();
-
-	vector<int> processed = explodeProcess(temp);
-
-	vector<vector<int>> tempMatrix = fill(processed);
-
-	matrix = tempMatrix;
+void print() {
+	for (int y = 1; y <= N; y++) {
+		for (int x = 1; x <= N; x++) {
+			cout << matrix[y][x] << '\t';
+		}
+		cout << '\n';
+	}
+	cout << '\n';
 }
 
-void change() {
-	vector<pair<int, int>> temp = changeProcess();
+vector<int> explosion(vector<int> input) {
+	vector<int> rest;
+	vector<int> temp;
+	int initialSize = input.size();
 
-	vector<int> input;
+	for (int i : input) {
+		if (temp.empty()) {
+			temp.push_back(i);
+		} else {
+			if (temp.back() == i) {
+				temp.push_back(i);
+			} else {
+				if (temp.size() >= 4) {
+					if (temp.back() == 1) {
+						one += temp.size();
+					} else if (temp.back() == 2) {
+						two += temp.size();
+					} else if (temp.back() == 3) {
+						three += temp.size();
+					}
+				} else {
+					for (int j : temp) {
+						rest.push_back(j);
+					}
+				}
 
-	for (pair<int, int> &t : temp) {
-		input.push_back(t.first);
-		input.push_back(t.second);
+				temp.clear();
+				temp.push_back(i);
+			}
+		}
+	}
+	if (temp.size() >= 4) {
+		if (temp.back() == 1) {
+			one += temp.size();
+		} else if (temp.back() == 2) {
+			two += temp.size();
+		} else if (temp.back() == 3) {
+			three += temp.size();
+		}
+	} else {
+		for (int j : temp) {
+			rest.push_back(j);
+		}
 	}
 
-	vector<vector<int>> tempMatrix = fill(input);
+	if (rest.size() == initialSize) {
+		return rest;
+	} else {
+		return explosion(rest);
+	}
+}
 
-	matrix = tempMatrix;
+vector<int> group(vector<int> input) {
+	vector<int> rest;
+	vector<int> temp;
+	int initialSize = input.size();
+
+	for (int i : input) {
+		if (temp.empty()) {
+			temp.push_back(i);
+		} else {
+			if (temp.back() == i) {
+				temp.push_back(i);
+			} else {
+				int B = temp.back();
+				int A = temp.size();
+
+				rest.push_back(A);
+				rest.push_back(B);
+
+				temp.clear();
+				temp.push_back(i);
+			}
+		}
+	}
+	
+	if (!temp.empty()) {
+		int B = temp.back();
+		int A = temp.size();
+
+		rest.push_back(A);
+		rest.push_back(B);
+	}
+
+	return rest;
 }
 
 int main() {
@@ -430,37 +290,25 @@ int main() {
 	cout.tie(0);
 
 	cin >> N >> M;
-
-	matrix = vector<vector<int>>(N, vector<int>(N));
-
-	for (int y = 0; y < N; y++) {
-		for (int x = 0; x < N; x++) {
+	matrix = vector<vector<int>>(N + 1, vector<int>(N + 1, 0));
+	for (int y = 1; y <= N; y++) {
+		for (int x = 1; x <= N; x++) {
 			cin >> matrix[y][x];
 		}
 	}
-
 	for (int i = 0; i < M; i++) {
 		int d, s;
-
 		cin >> d >> s;
-		d--;
 
-		// 1. magic
-		magic(d, s);
+		destroy(d, s);
+		vector<int> temp = readByOrder();
 
-		// 2. rebuild
-		rebuild();
-
-		// 3. explode(inner rebuild) - 동시에 터져야 한다.
-		explode();
-
-		// 4. change(inner)
-		change();
+		vector<int> expResult = explosion(temp);
+		vector<int> result = group(expResult);
+		insert(result);
 	}
 
-	int result = answer[1] + answer[2] * 2 + answer[3] * 3;
-
-	cout << result << '\n';
+	cout << one + 2 * two + 3 * three << '\n';
 
 	return 0;
 }
