@@ -1,27 +1,44 @@
+#include <iostream>
+#include <vector>
+#include <utility>
+using namespace std;
+
 /*
 	4 x 4 격자에서 연습
+	1,1에서 시작
 
-	격자에 물고기 M마리 있음
-	각 물고기는 격자 칸 하나에 들어가있고, 이동 방향 8가지중 하나 가짐
-	둘 이상의 물고기가 같은 칸에 존재 가능
+	물고기 M마리 존재, 이동방향을 가지고 있음
+	상하좌우, 대각선 중 하나
 
-	1. 상어가 모든물고기에게 복제 마법 시전 : 5번에서 물고기 복제되어 나타남
-	2. 모든 물고기 한칸 이동, 상어가 있는 칸, 물고기 냄새 있는 칸, 격자 범위 벗어나느 칸은
-	이동할 수 없음
-	각 물고기는 자신이 가지고 있는 이동 방향이 이동할 수 있는 칸을 만날 때까지 45도 반시계 회전
-	3. 상어가 연속 3칸 이동, 상어는 현재 칸에서 상하좌우로 인접한 칸으로 이도 ㅇ가능
-	연속해서 이동하는 칸 중 격자 범위 벗어나면 불가능
-	물고기가 있는 칸으로 이동중에 만난다면 물고기는 격자에서 제외, 제외되는 물고기는 물고기 냄새 남김
-	여러가지인 경우 사전 순으로 앞서는 방법 사용
-	4. 두번 전 연습에서 생긴 물고기의 냄새가 격자에서 사라짐
-	5. 1에서의 복제 마법 완료
+	상어도 격자의 한 칸에 들어감
+
+	둘 이상의 물고기가 같은 칸에 있을 수도 있으며,
+	마법사 상어와 물고기가 같은 칸 가능
+
+	1. 상어가 모든 물고기 복제 -> 5번에서 물고기가 복제되어
+	칸에 나타남
+	2. 모든 물고기 한칸 이동
+		상어가 있는 칸, 물고기의 냄새가 있는 칸, 격자의
+		범위를 벗어난 칸은 불가능
+		각 물고기는 자신이 가진 이동 방향이
+		이동할 수 있는 칸을 향할 때까지 45도 반시계 회전
+		만약 없으면 이동 안함
+	3. 상어가 연속해서 3칸 이동
+		상하좌우로 인접한 칸으로 이동 가능
+		연속해서 이동하는 칸 중에 격자의 범위를 벗어나면
+		불가능한 이동 방법
+		이동 중에 상어가 물고기 칸을 이동하면 그 물고기 제외
+		제외되는 물고기는 물고기 냄새를 남김
+		가능한 이동 방법 중에 제외되는 물고기 수가 가장
+		많은 방법으로 이동
+		그러한 방법이 여러가지인 경우 사전 순으로 가장 앞서는
+		방법 택함
+	4. 두 번 전 연습에서 생긴 물고기의 냄새가 격자에서 사라짐
+	5. 복제 마법 완료
 
 */
 
-#include <iostream>
-#include <vector>
-
-using namespace std;
+#define MAX 4
 
 #define LEFT 0
 #define UPLEFT 1
@@ -35,149 +52,21 @@ using namespace std;
 #define SHARK 0
 #define FISH 1
 
-struct node {
-	int status;
+struct Object {
+	int state;
 	int direction;
 };
 
-struct shark {
-	int y;
-	int x;
-};
+typedef vector<vector<vector<Object>>> VO;
 
-vector<node> matrix[5][5];
-int smell[5][5];
 int M, S;
-shark shrk;
-
-bool inRange(int y, int x) {
-	if (1 <= y && y <= 4 && 1 <= x && x <= 4) {
-		return true;
-	}
-	return false;
-}
-
-int dy[] = { 0, -1, -1, -1, 0, 1, 1, 1 };
-int dx[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
-
-void fishMove() {
-	vector<node> temp[5][5];
-
-	for (int y = 1; y <= 4; y++) {
-		for (int x = 1; x <= 4; x++) {
-			
-			for (node &present : matrix[y][x]) {
-				if (present.status == FISH) {
-					int direction = present.direction;
-					bool allFlag = false;
-
-					for (int i = 0; i < 8; i++) {
-						int nextDirect = (direction - i) % 8;
-
-						if (nextDirect < 0) {
-							nextDirect += 8;
-						}
-						int ny = y + dy[nextDirect];
-						int nx = x + dx[nextDirect];
-
-						if (inRange(ny, nx) && smell[ny][nx] == 0) {	// inRange, smell check
-							
-							if (shrk.y == ny && shrk.x == nx) {
-								continue;
-							}
-						
-							allFlag = true;
-							temp[ny][nx].push_back({ FISH, nextDirect });
-							break;
-							
-						}
-					}
-
-					if (!allFlag) {
-						temp[y][x].push_back({ FISH, direction });
-					}
-				}
-			}
-		}
-	}
-
-	for (int y = 1; y <= 4; y++) {
-		for (int x = 1; x <= 4; x++) {
-			matrix[y][x] = temp[y][x];
-		}
-	}
-}
-
-int sdy[] = { -1, 0, 1, 0 };
-int sdx[] = { 0, -1, 0, 1 };
-string result;
-int maxFish;
-
-void process(int y, int x, string str, int acc, vector<vector<vector<node>>> tempMatrix) {
-	if (str.size() == 3) {
-		if (acc > maxFish) {
-			maxFish = acc;
-			result = str;
-		}
-		return;
-	}
-
-	for (int d = 0; d < 4; d++) {
-		int ny = y + sdy[d];
-		int nx = x + sdx[d];
-
-		if (inRange(ny, nx)) {
-			vector<node> temp = tempMatrix[ny][nx];
-			
-			tempMatrix[ny][nx].clear();
-			
-			process(ny, nx, str + (char)('0' + d), acc + temp.size(), tempMatrix);
-
-			tempMatrix[ny][nx] = temp;
-		}
-	}
-}
-
-vector<vector<bool>> sharkMove() {
-	vector<vector<bool>> smellResult(5, vector<bool>(5, false));
-	int sy = shrk.y, sx = shrk.x;
-
-	vector<vector<vector<node>>> tempMatrix(5, vector<vector<node>>(5, vector<node>()));
-
-	for (int y = 1; y <= 4; y++) {
-		for (int x = 1; x <= 4; x++) {
-			tempMatrix[y][x] = matrix[y][x];
-		}
-	}
-
-	// find max
-	result = "";
-	maxFish = -1;
-	process(sy, sx, "", 0, tempMatrix);
-	int ny = sy, nx = sx;
-
-	for (char c : result) {
-		int num = c - '0';
-		
-		ny = ny + sdy[num];
-		nx = nx + sdx[num];
-
-		if (!matrix[ny][nx].empty()) {
-			smellResult[ny][nx] = true;
-			smell[ny][nx] = 2;
-			matrix[ny][nx].clear();
-		}
-	}
-
-	shrk.y = ny;
-	shrk.x = nx;
-
-	return smellResult;
-}
+int smell[MAX + 1][MAX + 1];
+VO matrix;
+bool sharkMatrix[MAX + 1][MAX + 1];
 
 void print() {
-	for (int y = 1; y <= 4; y++) {
-		for (int x = 1; x <= 4; x++) {
+	for (int y = 1; y <= MAX; y++) {
+		for (int x = 1; x <= MAX; x++) {
 			cout << matrix[y][x].size() << " ";
 		}
 		cout << '\n';
@@ -185,68 +74,262 @@ void print() {
 	cout << '\n';
 }
 
+pair<int, int> nextPos(int y, int x, int direction) {
+	switch (direction) {
+	case LEFT:
+		x--;
+		break;
+	case UPLEFT:
+		y--;
+		x--;
+		break;
+	case UP:
+		y--;
+		break;
+	case UPRIGHT:
+		y--;
+		x++;
+		break;
+	case RIGHT:
+		x++;
+		break;
+	case DOWNRIGHT:
+		y++;
+		x++;
+		break;
+	case DOWN:
+		y++;
+		break;
+	case DOWNLEFT:
+		y++;
+		x--;
+		break;
+	}
+	return { y, x };
+}
+
+bool inRange(int y, int x) {
+	if (1 <= y && y <= MAX && 1 <= x && x <= MAX) {
+		return true;
+	}
+	return false;
+}
+
+bool isSmell(int y, int x) {
+	if (smell[y][x] > 0) {
+		return true;
+	}
+	return false;
+}
+
+bool isShark(int y, int x) {
+	if (sharkMatrix[y][x]) {
+		return true;
+	}
+	return false;
+}
+
+int nextDirection(int direction) {
+	direction %= 8;
+	
+	if (direction < 0) {
+		direction += 8;
+	}
+	return direction;
+}
+
+void moveFish() {
+	VO result = VO(MAX + 1, vector<vector<Object>>(MAX + 1));
+
+	for (int y = 1; y <= MAX; y++) {
+		for (int x = 1; x <= MAX; x++) {
+			for (Object &obj : matrix[y][x]) {
+				int direction = obj.direction;
+				bool isMove = false;
+
+				for (int i = 0; i < 8; i++) {
+					int nextDirect = nextDirection(direction - i);
+
+					pair<int, int> next = nextPos(y, x, nextDirect);
+					int ny = next.first;
+					int nx = next.second;
+
+					if (!inRange(ny, nx)) {
+						continue;
+					}
+					if (isSmell(ny, nx)) {
+						continue;
+					}
+					if (isShark(ny, nx)) {
+						continue;
+					}
+					isMove = true;
+					obj.direction = nextDirect;
+					result[ny][nx].push_back(obj);
+					break;
+				}
+
+				if (!isMove) {
+					result[y][x].push_back(obj);
+				}
+			}
+		}
+	}
+
+	matrix = result;
+}
+
+pair<int, int> findShark() {
+	for (int y = 1; y <= MAX; y++) {
+		for (int x = 1; x <= MAX; x++) {
+			if (sharkMatrix[y][x]) {
+				return { y, x };
+			}
+		}
+	}
+	return { -1, -1 };
+}
+int dy[] = { -1, 0, 1, 0 };
+int dx[] = { 0, -1, 0, 1 };
+
+int countFish(vector<pair<int, int>> &temp, int sy, int sx) {
+	vector<vector<bool>> visited(MAX + 1, vector<bool>(MAX + 1, false));
+	int result = 0;
+
+	for (pair<int, int> &p : temp) {
+		int y = p.first;
+		int x = p.second;
+
+		if (!visited[y][x]) {
+			visited[y][x] = true;
+			int cnt = matrix[y][x].size();
+
+			result += cnt;
+		}
+	}
+
+	return result;
+}
+
+void moveShark() {
+	pair<int, int> sharkPos = findShark();
+	int sy = sharkPos.first;
+	int sx = sharkPos.second;
+	sharkMatrix[sy][sx] = false;
+
+	int maxCnt = -1;
+	vector<pair<int, int>> result;
+
+	for (int i = 0; i < 4; i++) {
+		int ny = sy + dy[i];
+		int nx = sx + dx[i];
+
+		if (!inRange(ny, nx)) continue;
+
+		for (int j = 0; j < 4; j++) {
+			int ny1 = ny + dy[j];
+			int nx1 = nx + dx[j];
+
+			if (!inRange(ny1, nx1)) continue;
+
+			for (int k = 0; k < 4; k++) {
+				int ny2 = ny1 + dy[k];
+				int nx2 = nx1 + dx[k];
+
+				if (!inRange(ny2, nx2)) continue;
+
+				vector<pair<int, int>> temp;
+				temp.push_back({ ny, nx });
+				temp.push_back({ ny1, nx1 });
+				temp.push_back({ ny2, nx2 });
+
+				int cnt = countFish(temp, sy, sx);
+
+				if (maxCnt < cnt) {
+					result = temp;
+					maxCnt = cnt;
+				}
+			}
+		}
+	}
+
+	for (pair<int, int> &p : result) {
+		if (!matrix[p.first][p.second].empty()) {
+			matrix[p.first][p.second].clear();
+			smell[p.first][p.second] = 3;
+		}
+	}
+
+	pair<int, int> last = result.back();
+	sharkMatrix[last.first][last.second] = true;
+}
+
+void deleteSmell() {
+	for (int y = 1; y <= MAX; y++) {
+		for (int x = 1; x <= MAX; x++) {
+			if (smell[y][x] > 0) {
+				smell[y][x]--;
+			}
+		}
+	}
+}
+
+void applyReplica(VO& prev) {
+	for (int y = 1; y <= MAX; y++) {
+		for (int x = 1; x <= MAX; x++) {
+			for (Object &obj : prev[y][x]) {
+				matrix[y][x].push_back(obj);
+			}
+		}
+	}
+}
+
+int calculate() {
+	int result = 0;
+	for (int y = 1; y <= MAX; y++) {
+		for (int x = 1; x <= MAX; x++) {
+			result += matrix[y][x].size();
+		}
+	}
+	return result;
+}
+
 int main() {
 	ios_base::sync_with_stdio(0);
 	cin.tie(0);
 	cout.tie(0);
 
+	matrix = VO(MAX + 1, vector<vector<Object>>(MAX + 1));
+
 	cin >> M >> S;
-
 	for (int i = 0; i < M; i++) {
-		int fx, fy, d;
+		int y, x, d;
 
-		cin >> fx >> fy >> d;
+		cin >> y >> x >> d;
 		d--;
-		matrix[fx][fy].push_back({ FISH, d });
+		matrix[y][x].push_back({ FISH, d });
+	}
+	int y, x;
+	cin >> y >> x;
+	sharkMatrix[y][x] = true;
+
+	for (int magicCnt = 0; magicCnt < S; magicCnt++) {
+		// 1. replica
+		VO replica = matrix;
+		// 2. move fish
+		moveFish();
+		//print();
+		// 3. move shark
+		moveShark();
+		//print();
+		// 4. delete smell
+		deleteSmell();
+		// 5. apply replica
+		applyReplica(replica);
+		//print();
 	}
 
-	int sx, sy;
-	cin >> sx >> sy;
-	shrk = { sx, sy };
-
-	for (int i = 0; i < S; i++) {
-		// 1. replicate(not complete)
-		vector<node> copy[5][5];
-		for (int y = 1; y <= 4; y++) {
-			for (int x = 1; x <= 4; x++) {
-				copy[y][x] = matrix[y][x];
-			}
-		}
-
-		// 2. fish move
-		fishMove();
-
-		// 3. shark move
-		vector<vector<bool>> tempSmell = sharkMove();
-
-		// 4. smell decrement
-		for (int y = 1; y <= 4; y++) {
-			for (int x = 1; x <= 4; x++) {
-				if (!tempSmell[y][x] && smell[y][x] > 0) {
-					smell[y][x]--;
-				}
-			}
-		}
-
-		// 5. replication complete
-		for (int y = 1; y <= 4; y++) {
-			for (int x = 1; x <= 4; x++) {
-				for (node &temp : copy[y][x]) {
-					matrix[y][x].push_back(temp);
-				}
-			}
-		}
-	}
-
-	int answer = 0;
-
-	for (int y = 1; y <= 4; y++) {
-		for (int x = 1; x <= 4; x++) {
-			answer += matrix[y][x].size();
-		}
-	}
-
-	cout << answer << '\n';
+	cout << calculate() << '\n';
 
 	return 0;
 }
