@@ -1,66 +1,57 @@
 #include <iostream>
+#include <utility>
 #include <algorithm>
-
 using namespace std;
 
+#define MAX 500
+
 int N;
-int r[500];
-int c[500];
+pair<int, int> matrix[MAX];
+int dp[MAX][MAX];
 
-int dp[500][500];
+void init() {
+	for (int i = 0; i < MAX; i++) {
+		for (int j = 0; j < MAX; j++) {
+			dp[i][j] = -1;
+		}
+	}
+}
 
-int solve(int i, int j) {
-	if (i == j) {
+int solve(int start, int end) {
+	if (start == end) {
 		return 0;
 	}
 
-	if (dp[i][j] != -1) {
-		return dp[i][j];
+	if (dp[start][end] != -1) {
+		return dp[start][end];
 	}
 
-	int result = -1;
-	for (int k = i; k <= j - 1; k++) {
-		int cal = solve(i, k) + solve(k + 1, j) + r[i] * c[k] * c[j];
-
-		if (result == -1) {
-			result = cal;
-		}
-		else {
-			result = min(result, cal);
-		}
+	int result = INT32_MAX;
+	for (int i = start; i <= end - 1; i++) {
+		result = min(result, solve(start, i) + solve(i + 1, end) 
+			+ matrix[start].first 
+			* matrix[i].second 
+			* matrix[end].second);
 	}
-
-	return dp[i][j] = result;
-}
-
-void init() {
-	for (int y = 0; y < 500; y++) {
-		for (int x = 0; x < 500; x++) {
-			dp[y][x] = -1;
-		}
-	}
+	return dp[start][end] = result;
 }
 
 int main() {
-	cin >> N;
-
-	for (int i = 0; i < N; i++) {
-		cin >> r[i] >> c[i];
-	}
-
-	if (N == 1) {
-		cout << 0 << '\n';
-		return 0;
-	}
-
-	if (N == 2) {
-		cout << r[0] * r[1] << '\n';
-		return 0;
-	}
+	ios_base::sync_with_stdio(0);
+	cin.tie(0);
+	cout.tie(0);
 
 	init();
 
-	cout << solve(0, N - 1) << '\n';
+	cin >> N;
+	for (int i = 0; i < N; i++) {
+		int a, b;
+		cin >> a >> b;
+		matrix[i] = { a,b };
+	}
+
+	int answer = solve(0, N - 1);
+	cout << answer << '\n';
 
 	return 0;
 }
