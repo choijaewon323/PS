@@ -1,149 +1,131 @@
 #include <iostream>
+#include <vector>
+#include <cmath>
 #include <utility>
-#include <limits>
-
+#include <algorithm>
+#include <stack>
 using namespace std;
 
-int arr[100001];
-pair<int, int> segTree[400001];
+#define MAX 100000
+#define INF 1000000001
 
-pair<int, int> init(int node, int left, int right)
-{
-	if (left == right)
-	{
-		return segTree[node] = { arr[left], left };
+struct Node {
+	int num;
+	int index;
+};
+
+int N, M;
+int arr[MAX + 1];
+Node segment[MAX * 4 + 1];
+
+
+Node init(int start, int end, int node) {
+	if (start == end) {
+		return segment[node] = { arr[start], start };
 	}
 
-	int mid = (left + right) / 2;
-
-	// left
-	pair<int, int> leftMin = init(node * 2, left, mid);
-
-	// right
-	pair<int, int> rightMin = init(node * 2 + 1, mid + 1, right);
-
-	if (leftMin.first == rightMin.first)
-	{
-		return segTree[node] = leftMin;
-	}
-	if (leftMin.first < rightMin.first)
-	{
-		return segTree[node] = leftMin;
-	}
+	int mid = (start + end) / 2;
 	
-	return segTree[node] = rightMin;
+	Node n1 = init(start, mid, node * 2);
+	Node n2 = init(mid + 1, end, node * 2 + 1);
+
+	if (n1.num < n2.num) {
+		segment[node] = n1;
+	} else if (n1.num > n2.num) {
+		segment[node] = n2;
+	} else {
+		if (n1.index < n2.index) {
+			segment[node] = n1;
+		} else {
+			segment[node] = n2;
+		}
+	}
+	return segment[node];
 }
 
-pair<int, int> query(int left, int right, int node, int nodeLeft, int nodeRight)
-{
-	if (right < nodeLeft || nodeRight < left)
-	{
-		return { 1000000001, -1 };
+Node findMin(int start, int end, int node, int left, int right) {
+	if (end < left || right < start) {
+		return { INF, -1 };
 	}
 
-	if (left <= nodeLeft && nodeRight <= right)
-	{
-		return segTree[node];
+	if (left <= start && end <= right) {
+		return segment[node];
 	}
 
-	int mid = (nodeLeft + nodeRight) / 2;
+	int mid = (start + end) / 2;
 
-	// left
-	pair<int, int> leftMin = query(left, right, node * 2, nodeLeft, mid);
+	Node n1 = findMin(start, mid, node * 2, left, right);
+	Node n2 = findMin(mid + 1, end, node * 2 + 1, left, right);
 
-	// right
-	pair<int, int> rightMin = query(left, right, node * 2 + 1, mid + 1, nodeRight);
-
-	if (leftMin.first == rightMin.first)
-	{
-		return leftMin;
+	if (n1.num < n2.num) {
+		return n1;
+	} else if (n1.num > n2.num) {
+		return n2;
+	} else {
+		if (n1.index < n2.index) {
+			return n1;
+		} else {
+			return n2;
+		}
 	}
-	if (leftMin.first < rightMin.first)
-	{
-		return leftMin;
-	}
-
-	return rightMin;
 }
 
-pair<int, int> update(int index, int value, int node, int nodeLeft, int nodeRight)
-{
-	if (index < nodeLeft || index > nodeRight)
-	{
-		return segTree[node];
+Node update(int start, int end, int node, int index, int num) {
+	if (index < start || index > end) {
+		return segment[node];
 	}
 
-	if (nodeLeft == nodeRight)
-	{
-		return segTree[node] = { value, index };
+	if (start == end) {
+		return segment[node] = { num, index };
 	}
 
-	int mid = (nodeLeft + nodeRight) / 2;
+	int mid = (start + end) / 2;
 
-	// left
-	pair<int, int> leftMin = update(index, value, node * 2, nodeLeft, mid);
+	Node n1 = update(start, mid, node * 2, index, num);
+	Node n2 = update(mid + 1, end, node * 2 + 1, index, num);
 
-	// right
-	pair<int, int> rightMin = update(index, value, node * 2 + 1, mid + 1, nodeRight);
-
-	if (leftMin.first == rightMin.first)
-	{
-		return segTree[node] = leftMin;
+	if (n1.num < n2.num) {
+		segment[node] = n1;
+	} else if (n1.num > n2.num) {
+		segment[node] = n2;
+	} else {
+		if (n1.index < n2.index) {
+			segment[node] = n1;
+		} else {
+			segment[node] = n2;
+		}
 	}
-	if (leftMin.first < rightMin.first)
-	{
-		return segTree[node] = leftMin;
-	}
-
-	return segTree[node] = rightMin;
+	return segment[node];
 }
 
-int main()
-{
+void input() {
+	cin >> N;
+	for (int i = 1; i <= N; i++) {
+		cin >> arr[i];
+	}
+	init(1, N, 1);
+	cin >> M;
+	for (int i = 0; i < M; i++) {
+		int a, b, c;
+
+		cin >> a >> b >> c;
+
+		if (a == 1) {
+			update(1, N, 1, b, c);
+		} else if (a == 2) {
+			Node result = findMin(1, N, 1, b, c);
+
+			cout << result.index << '\n';
+		}
+	}
+}
+
+int main() {
 	ios_base::sync_with_stdio(0);
 	cin.tie(0);
 	cout.tie(0);
 
-	int n;
-
-	cin >> n;
-
-	for (int i = 1; i <= n; i++)
-	{
-		cin >> arr[i];
-	}
-
-	init(1, 1, n);
-
-	int m;
-
-	cin >> m;
-
-	for (int i = 0; i < m; i++)
-	{
-		int q;
-
-		cin >> q;
-
-		if (q == 1)
-		{
-			int index, v;
-
-			cin >> index >> v;
-
-			update(index, v, 1, 1, n);
-		}
-		else if (q == 2)
-		{
-			int left, right;
-
-			cin >> left >> right;
-
-			pair<int, int> result = query(left, right, 1, 1, n);
-
-			cout << result.second << '\n';
-		}
-	}
+	input();
 
 	return 0;
 }
