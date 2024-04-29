@@ -1,122 +1,109 @@
-#include <vector>
-#include <stack>
 #include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <stack>
 using namespace std;
 
-vector<int> edges;
-vector<vector<int>> transEdges;
-vector<bool> visited;
-vector<int> tempScc;
-vector<vector<int>> scc;
+#define MAX 100000
+
+int n;
+vector<int> edges[MAX + 1];
+vector<int> invert[MAX + 1];
 stack<int> st;
+vector<int> scc;
+vector<bool> visited;
+bool answer[MAX + 1];
 
-void dfs(int start)
-{
-	int next;
-
-	visited[start] = true;
-	next = edges[start];
-
-	if (!visited[next])
-	{
-		dfs(next);
+void init() {
+	st = stack<int>();
+	visited = vector<bool>(n + 1, false);
+	for (int i = 0; i < MAX + 1; i++) {
+		edges[i].clear();
+		invert[i].clear();
+		answer[i] = false;
 	}
-
-	st.push(start);
 }
 
-void transDfs(int start)
-{
-	int next;
-
-	visited[start] = true;
-	for (int i = 0; i < transEdges[start].size(); i++)
-	{
-		int next = transEdges[start][i];
-
-		if (!visited[next])
-		{
-			transDfs(next);
+void dfs(int here) {
+	visited[here] = true;
+	
+	for (int next : edges[here]) {
+		if (!visited[next]) {
+			dfs(next);
 		}
 	}
 
-	tempScc.push_back(start);
+	st.push(here);
 }
 
-int main()
-{
+void findScc(int here) {
+	visited[here] = true;
+
+	for (int next : invert[here]) {
+		if (!visited[next]) {
+			findScc(next);
+		}
+	}
+
+	scc.push_back(here);
+}
+
+int main() {
 	ios_base::sync_with_stdio(0);
 	cin.tie(0);
 	cout.tie(0);
 
-	int test_case;
-
-	cin >> test_case;
-
-	for (int test = 0; test < test_case; test++)
-	{
-		int n, answer;
-
+	int T;
+	cin >> T;
+	for (int test = 0; test < T; test++) {
+		
 		cin >> n;
-
-		answer = n;
-		visited = vector<bool>(n + 1, false);
-		edges = vector<int>(n + 1, -1);
-		transEdges = vector<vector<int>>(n + 1, vector<int>());
-		st = stack<int>();
-
-		for (int i = 1; i <= n; i++)
-		{
+		init();
+		for (int i = 1; i <= n; i++) {
 			int temp;
-
 			cin >> temp;
 
-			edges[i] = temp;
-			transEdges[temp].push_back(i);
+			edges[i].push_back(temp);
+			invert[temp].push_back(i);
 		}
 
-		for (int i = 1; i <= n; i++)
-		{
-			if (!visited[i])
-			{
+		for (int i = 1; i <= n; i++) {
+			if (!visited[i]) {
 				dfs(i);
 			}
 		}
 
 		visited = vector<bool>(n + 1, false);
-
-		while (!st.empty())
-		{
-			int present = st.top();
+		while (!st.empty()) {
+			int here = st.top();
 			st.pop();
 
-			if (!visited[present])
-			{
-				tempScc.clear();
-				transDfs(present);
-				scc.push_back(tempScc);
-			}
-		}
-
-		for (int i = 0; i < scc.size(); i++)
-		{
-			if (scc[i].size() >= 2)
-			{
-				answer -= scc[i].size();
-			}
-			else if (scc[i].size() == 1)
-			{
-				int temp = scc[i].front();
-
-				if (edges[temp] == temp)
-				{
-					answer--;
+			if (!visited[here]) {
+				scc.clear();
+				findScc(here);
+				
+				if (scc.size() == 1) {
+					if (edges[here].back() == here) {
+						answer[here] = true;
+					}
+				} else {
+					for (int s : scc) {
+						answer[s] = true;
+					}
 				}
 			}
 		}
 
-		cout << answer << '\n';
+		int result = 0;
+		for (int i = 1; i <= n; i++) {
+			if (!answer[i]) {
+				result++;
+			}
+		}
 
-		scc.clear();
+		cout << result << '\n';
 	}
+
+	return 0;
 }
