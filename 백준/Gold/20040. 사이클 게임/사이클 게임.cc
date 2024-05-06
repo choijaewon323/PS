@@ -1,76 +1,74 @@
 #include <iostream>
-
+#include <vector>
 using namespace std;
 
-int parent[500000];
+#define MAX 500000
 
-int find(int x)
-{
-	if (parent[x] != x)
-	{
+vector<pair<int, int>> inputArray;
+int parent[MAX];
+int n, m;
+
+void init() {
+	for (int i = 0; i < n; i++) {
+		parent[i] = i;
+	}
+}
+
+int find(int x) {
+	if (x != parent[x]) {
 		return parent[x] = find(parent[x]);
 	}
 	return x;
 }
 
-bool union_find(int a, int b)
-{
-	int aRoot = find(a);
-	int bRoot = find(b);
+bool merge(int a, int b) {
+	a = find(a);
+	b = find(b);
 
-	if (aRoot == bRoot)
-	{
+	if (a == b) {
 		return false;
 	}
-
-	if (aRoot > bRoot)
-	{
-		parent[bRoot] = aRoot;
-	}
-	else
-	{
-		parent[aRoot] = bRoot;
+	
+	if (a < b) {
+		parent[b] = a;
+	} else {
+		parent[a] = b;
 	}
 
 	return true;
 }
 
-int main()
-{
-	ios_base::sync_with_stdio(0);
-	cin.tie(0);
-
-	int n, m;
-
+void input() {
 	cin >> n >> m;
-
-	for (int i = 0; i < n; i++)
-	{
-		parent[i] = i;
+	init();
+	for (int i = 0; i < m; i++) {
+		int x, y;
+		cin >> x >> y;
+		inputArray.push_back({ x, y });
 	}
+}
 
-	int answer = 0;
-	for (int i = 1; i <= m; i++)
-	{
-		int u, v;
+int solve() {
+	for (int answer = 0; answer < m; answer++) {
+		pair<int, int> present = inputArray[answer];
+		int a = present.first;
+		int b = present.second;
 
-		cin >> u >> v;
-
-		if (!union_find(u, v))
-		{
-			answer = i;
-			break;
+		if (!merge(a, b)) {
+			return answer + 1;
 		}
 	}
 
-	if (answer == 0)
-	{
-		cout << 0 << '\n';
-	}
-	else
-	{
-		cout << answer << '\n';
-	}
+	return 0;
+}
+
+int main() {
+	ios_base::sync_with_stdio(0);
+	cin.tie(0);
+	cout.tie(0);
+
+	input();
+	cout << solve() << '\n';
 
 	return 0;
 }
