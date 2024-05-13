@@ -1,132 +1,110 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <utility>
-
+#include <map>
+#include <set>
 using namespace std;
 
-char matrix[1000][1000];
+#define MAX 1000
 
-int inverter[1000][1000];
+int N, M;
+int parent[MAX * MAX];
+char board[MAX][MAX];
+map<pair<int, int>, int> boardToNumber;
 
-int parent[1000000];
-
-void init(int N, int M)
-{
-	int cnt = 0;
-
-	for (int y = 0; y < N; y++)
-	{
-		for (int x = 0; x < M; x++)
-		{
-			inverter[y][x] = cnt++;
-		}
-	}
-
-	for (int i = 0; i < N * M; i++)
-	{
+void init() {
+	for (int i = 0; i < N * M; i++) {
 		parent[i] = i;
 	}
 }
 
-int find(int x)
-{
-	if (parent[x] != x)
-	{
+int find(int x) {
+	if (parent[x] != x) {
 		return parent[x] = find(parent[x]);
 	}
 	return x;
 }
 
-void union_find(int a, int b)
-{
-	int aRoot = find(a);
-	int bRoot = find(b);
-
-	if (aRoot == bRoot)
-	{
+void merge(int a, int b) {
+	a = find(a);
+	b = find(b);
+	if (a == b) {
 		return;
 	}
-
-	if (aRoot < bRoot)
-	{
-		parent[bRoot] = aRoot;
-	}
-	else
-	{
-		parent[aRoot] = bRoot;
+	if (a < b) {
+		parent[b] = a;
+	} else {
+		parent[a] = b;
 	}
 }
 
-vector<pair<int, int>> edges;
-bool occupied[1000000];
+void input() {
+	int cnt = 0;
+	cin >> N >> M;
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < M; x++) {
+			cin >> board[y][x];
+			boardToNumber[{y, x}] = cnt;
+			cnt++;
+		}
+	}
+}
 
-int main()
-{
+int oppositeNumber(int y, int x) {
+	char present = board[y][x];
+	switch (present) {
+	case 'D':
+		y++;
+		break;
+	case 'U':
+		y--;
+		break;
+	case 'L':
+		x--;
+		break;
+	case 'R':
+		x++;
+		break;
+	}
+	return boardToNumber[{y, x}];
+}
+
+int countOfZone() {
+	int result = 0;
+	vector<int> zones(N * M, false);
+	for (int i = 0; i < N * M; i++) {
+		int present = find(i);
+		zones[present] = true;
+	}
+	for (int i = 0; i < N * M; i++) {
+		if (zones[i]) {
+			result++;
+		}
+	}
+	return result;
+}
+
+int solve() {
+	int result = 0;
+	init();
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < M; x++) {
+			int present = boardToNumber[{y, x}];
+			int opposite = oppositeNumber(y, x);
+			merge(present, opposite);
+		}
+	}
+	return countOfZone();
+}
+
+int main() {
 	ios_base::sync_with_stdio(0);
 	cin.tie(0);
+	cout.tie(0);
 
-	int N, M;
-
-	cin >> N >> M;
-
-	init(N, M);
-
-	for (int y = 0; y < N; y++)
-	{
-		for (int x = 0; x < M; x++)
-		{
-			cin >> matrix[y][x];
-
-			pair<int, int> temp;
-			switch (matrix[y][x])
-			{
-			case 'U':
-				temp = { inverter[y][x], inverter[y-1][x] };
-				break;
-
-			case 'D':
-				temp = { inverter[y][x], inverter[y + 1][x] };
-				break;
-
-			case 'L':
-				temp = { inverter[y][x], inverter[y][x-1] };
-				break;
-
-			case 'R':
-				temp = { inverter[y][x], inverter[y][x+1] };
-				break;
-			}
-			edges.push_back(temp);
-		}
-	}
-
-	for (auto &ed : edges)
-	{
-		int a = ed.first;
-		int b = ed.second;
-
-		union_find(a, b);
-	}
-
-	int answer = 0;
-
-	for (int y = 0; y < N; y++)
-	{
-		for (int x = 0; x < M; x++)
-		{
-			int temp = inverter[y][x];
-
-			temp = find(temp);
-
-			if (!occupied[temp])
-			{
-				answer++;
-				occupied[temp] = true;
-			}
-		}
-	}
-
-	cout << answer << '\n';
+	input();
+	cout << solve() << '\n';
 
 	return 0;
 }
