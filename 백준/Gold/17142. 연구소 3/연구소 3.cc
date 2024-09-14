@@ -1,152 +1,165 @@
 #include <iostream>
-#include <vector>
 #include <utility>
+#include <vector>
 #include <queue>
 #include <algorithm>
-
 using namespace std;
 
-#define MAX 1000000
+#define MAX 50
+#define EMPTY 0
+#define WALL 1
+#define VIRUS 2
+#define INF 1000000000
 
-vector<pair<int, int>> virus;
-int lab[50][50];
 int N, M;
 
-int dy[] = { -1, 0, 1, 0 };
-int dx[] = { 0, -1, 0, 1 };
+vector<pair<int, int>> allVirus;
+int allSize;
+int lab[MAX][MAX];
+int answer = INF;
+int dy[] = {-1, 0, 1, 0};
+int dx[] = {0, -1, 0, 1};
 
-bool inRange(int y, int x)
-{
-	if (0 <= y && y < N && 0 <= x && x < N)
-	{
-		return true;
-	}
-	return false;
+bool inRange(int y, int x) {
+    return (0 <= y && y < N && 0 <= x && x < N);
 }
 
-int bfs(vector<int> index)
-{
-	queue<pair<int, int>> q;
-	vector<vector<int>> visited(N, vector<int>(N, 0));
+int getSeconds(vector<vector<int>>& dist) {
+    int seconds = -1;
+    
+    for (int y = 0; y < N; y++) {
+        for (int x = 0; x < N; x++) {
+            if (lab[y][x] == VIRUS) {
+                continue;
+            }
+            
+            seconds = max(seconds, dist[y][x]);
+        }
+    }
 
-	for (int i = 0; i < index.size(); i++)
-	{
-		pair<int, int> v = virus[index[i]];
-
-		visited[v.first][v.second] = 1;
-		q.push({ v.first, v.second });
-	}
-
-	while (!q.empty())
-	{
-		pair<int, int> present = q.front();
-		q.pop();
-
-		for (int i = 0; i < 4; i++)
-		{
-			int ny = present.first + dy[i];
-			int nx = present.second + dx[i];
-
-			if (inRange(ny, nx) && visited[ny][nx] == 0 && lab[ny][nx] != 1)
-			{
-				q.push({ ny, nx });
-				visited[ny][nx] = visited[present.first][present.second] + 1;
-			}
-		}
-	}
-
-	int result = -1;
-	for (int y = 0; y < N; y++)
-	{
-		for (int x = 0; x < N; x++)
-		{
-			if (visited[y][x] == 0 && lab[y][x] == 0)
-			{
-				return MAX;
-			}
-
-			if (visited[y][x] == 0 && lab[y][x] == 1)
-			{
-				continue;
-			}
-
-			if (lab[y][x] == 2)
-			{
-				continue;
-			}
-
-			result = max(visited[y][x], result);
-		}
-	}
-
-	if (result == -1)
-	{
-		return 0;
-	}
-	return result - 1;
+    return seconds;
 }
 
-int solution(int M, vector<int> index)
-{
-	if (index.size() == M)
-	{
-		return bfs(index);
-	}
+bool isAllVirus(vector<vector<int>>& dist) {
+    for (int y = 0; y < N; y++) {
+        for (int x = 0; x < N; x++) {
+            if (lab[y][x] == WALL) {
+                continue;
+            }
 
-	if (index.empty())
-	{
-		int result = MAX;
-		for (int i = 0; i < virus.size(); i++)
-		{
-			index.push_back(i);
-			result = min(solution(M, index), result);
-			index.pop_back();
-		}
+            if (lab[y][x] == EMPTY && dist[y][x] == -1) {
+                return false;
+            }
+        }
+    }
 
-		if (result == MAX)
-		{
-			return -1;
-		}
-		else
-		{
-			return result;
-		}
-	}
-
-	int result = MAX;
-	for (int i = index.back() + 1; i < virus.size(); i++)
-	{
-		index.push_back(i);
-		result = min(solution(M, index), result);
-		index.pop_back();
-	}
-	return result;
+    return true;
 }
 
-int main()
-{
-	ios_base::sync_with_stdio(0);
-	cin.tie(0);
+int bfs(vector<pair<int, int>>& startVirus) {
+    vector<vector<int>> dist(N, vector<int>(N, -1));
+    queue<pair<int, int>> q;
+    
+    for (auto& start : startVirus) {
+        dist[start.first][start.second] = 0;
+        q.push(start);
+    }
 
-	cin >> N >> M;
+    while (!q.empty()) {
+        int y = q.front().first;
+        int x = q.front().second;
+        q.pop();
 
-	for (int y = 0; y < N; y++)
-	{
-		for (int x = 0; x < N; x++)
-		{
-			cin >> lab[y][x];
+        for (int i = 0; i < 4; i++) {
+            int ny = y + dy[i];
+            int nx = x + dx[i];
 
-			if (lab[y][x] == 2)
-			{
-				virus.push_back({ y, x });
-			}
-		}
-	}
+            if (inRange(ny, nx) &&
+            dist[ny][nx] == -1 &&
+            lab[ny][nx] != WALL) {
+                dist[ny][nx] = dist[y][x] + 1;
+                q.push({ny, nx});
+            }
+        }
+    }
 
-	vector<int> index;
-	int result = solution(M, index);
+    int seconds = getSeconds(dist);
+    
+    if (isAllVirus(dist)) {
+        return seconds;
+    }
 
-	cout << result << '\n';
+    return INF;
+}
 
-	return 0;
+vector<pair<int, int>> getStart(vector<int>& index) {
+    vector<pair<int, int>> result;
+
+    for (int idx : index) {
+        result.push_back(allVirus[idx]);
+    }
+
+    return result;
+}
+
+void solve(int prev, vector<int> index) {
+    if (index.size() == M) {
+        vector<pair<int, int>> tempStart = getStart(index);
+
+        int tempAnswer = bfs(tempStart);
+
+        answer = min(answer, tempAnswer);
+        return;
+    }
+
+    for (int i = prev + 1; i < allSize; i++) {
+        index.push_back(i);
+        solve(i, index);
+        index.pop_back();
+    }
+}
+
+bool isAlreadyVirus() {
+    for (int y = 0; y < N; y++) {
+        for (int x = 0; x < N; x++) {
+            if (lab[y][x] == EMPTY) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+int main() {
+    ios_base::sync_with_stdio(0);
+    cin.tie(0);
+
+    cin >> N >> M;
+    for (int y = 0; y < N; y++){
+        for (int x = 0; x < N; x++) {
+            cin >> lab[y][x];
+
+            if (lab[y][x] == VIRUS) {
+                allVirus.push_back({y, x});
+            }
+        }
+    }
+
+    if (isAlreadyVirus()) {
+        cout << 0 << '\n';
+        return 0;
+    }
+
+    allSize = allVirus.size();
+
+    solve(-1, vector<int>());
+
+    if (answer == INF) {
+        cout << -1 << '\n';
+        return 0;
+    }
+    cout << answer << '\n';
+
+    return 0;
 }
