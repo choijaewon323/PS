@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <utility>
 #include <algorithm>
 
 using namespace std;
@@ -13,223 +14,146 @@ using namespace std;
 #define RIGHT 6
 #define UPRIGHT 7
 
-#define SHARK -1
-#define FISH -2
+#define SIZE 4
+#define FISH_MAX 16
 #define EMPTY 0
+#define SHARK -1
 
-struct node
-{
-	int type;
-	int num;
-	int direction;
-};
-
-pair<int, int> nextPos(int direction, int cnt, int y, int x)
-{
-	for (int i = 0; i < cnt; i++)
-	{
-		switch (direction)
-		{
-		case UP:
-			y--;
-			break;
-
-		case UPLEFT:
-			y--;
-			x--;
-			break;
-
-		case LEFT:
-			x--;
-			break;
-
-		case DOWNLEFT:
-			y++;
-			x--;
-			break;
-
-		case DOWN:
-			y++;
-			break;
-
-		case DOWNRIGHT:
-			y++;
-			x++;
-			break;
-
-		case RIGHT:
-			x++;
-			break;
-
-		case UPRIGHT:
-			y--;
-			x++;
-			break;
-		}
-	}
-	
-	return { y, x };
+bool inRange(int y, int x) {
+    return (0 <= y && y < SIZE && 0 <= x && x < SIZE);
 }
 
-bool inRange(int y, int x)
-{
-	if (0 <= y && y < 4 && 0 <= x && x < 4)
-	{
-		return true;
-	}
-	return false;
+pair<int, int> next(int y, int x, int direct) {
+    switch (direct) {
+    case UP:
+        y--;
+        break;
+    case UPLEFT:
+        y--;
+        x--;
+        break;
+    case LEFT:
+        x--;
+        break;
+    case DOWNLEFT:
+        y++;
+        x--;
+        break;
+    case DOWN:
+        y++;
+        break;
+    case DOWNRIGHT:
+        y++;
+        x++;
+        break;
+    case RIGHT:
+        x++;
+        break;
+    case UPRIGHT:
+        y--;
+        x++;
+        break;
+    }
+    return { y, x };
 }
 
-void swap(node &a, node &b)
-{
-	node temp = a;
-	a = b;
-	b = temp;
+pair<int, int> findFish(int number, vector<vector<int>> &space) {
+    for (int y = 0; y < SIZE; y++) {
+        for (int x = 0; x < SIZE; x++) {
+            if (space[y][x] == EMPTY ||
+                space[y][x] == SHARK) {
+                continue;
+            }
+
+            if (space[y][x] == number) {
+                return { y, x };
+            }
+        }
+    }
+    return { -1, -1 };
 }
 
-void fishMove(vector<vector<node>> &nodes, int fishNum)
-{
-	for (int y = 0; y < 4; y++)
-	{
-		for (int x = 0; x < 4; x++)
-		{
-			if (nodes[y][x].type == FISH && nodes[y][x].num == fishNum)
-			{
-				int direction = nodes[y][x].direction;
+void moveAllFish(vector<vector<int>> &space, vector<int> &fishDirect) {
+    for (int number = 1; number <= FISH_MAX; number++) {
+        pair<int, int> presentFish = findFish(number, space);
 
-				for (int i = 0; i < 8; i++)
-				{
-					int tempDirect = direction + i;
-					tempDirect %= 8;
+        if (presentFish.first == -1) {
+            continue;
+        }
 
-					nodes[y][x].direction = tempDirect;
-					pair<int, int> next = nextPos(tempDirect, 1, y, x);
-					if (inRange(next.first, next.second))
-					{
-						node &temp = nodes[next.first][next.second];
+        int y = presentFish.first;
+        int x = presentFish.second;
+        int direct = fishDirect[number];
 
-						if (temp.type == EMPTY || temp.type == FISH)
-						{
-							swap(nodes[y][x], temp);
+        for (int i = 0; i < 8; i++) {
+            int nextDirect = (direct + i) % 8;
 
-							return;
-						}
-					}
-				}
+            pair<int, int> nextPos = next(y, x, nextDirect);
 
-				return;
-			}
-		}
-	}
+            if (inRange(nextPos.first, nextPos.second) &&
+                space[nextPos.first][nextPos.second] != SHARK) {
+
+                swap(space[y][x], space[nextPos.first][nextPos.second]);
+                fishDirect[number] = nextDirect;
+                break;
+            }
+        }
+    }
 }
 
-void print(vector<vector<node>> nodes)
-{
-	for (int y = 0; y < 4; y++)
-	{
-		for (int x = 0; x < 4; x++)
-		{
-			cout << nodes[y][x].num << " ";
-		}
-		cout << '\n';
-	}
+int findAnswer(int sharkY, int sharkX, vector<vector<int>> space, vector<int> fishDirect) {
+
+    // eat fish
+    int answer = space[sharkY][sharkX];
+    int sharkDirect = fishDirect[space[sharkY][sharkX]];
+    space[sharkY][sharkX] = SHARK;
+
+    // move fish
+    moveAllFish(space, fishDirect);
+
+    // move shark
+    space[sharkY][sharkX] = EMPTY;
+    pair<int, int> nextPos = next(sharkY, sharkX, sharkDirect);
+    int temp = 0;
+    while (true) {
+        if (!inRange(nextPos.first, nextPos.second)) {
+            break;
+        }
+
+        if (space[nextPos.first][nextPos.second] == EMPTY) {
+            nextPos = next(nextPos.first, nextPos.second, sharkDirect);
+            continue;
+        }
+
+        temp = max(temp, findAnswer(nextPos.first, nextPos.second, space, fishDirect));
+        nextPos = next(nextPos.first, nextPos.second, sharkDirect);
+    }
+
+    return answer + temp;
 }
 
-pair<int, int> findShark(vector<vector<node>> &nodes)
-{
-	for (int y = 0; y < 4; y++)
-	{
-		for (int x = 0; x < 4; x++)
-		{
-			if (nodes[y][x].type == SHARK)
-			{
-				return { y, x };
-			}
-		}
-	}
-	return { -1, -1 };
-}
+int main() {
+    ios_base::sync_with_stdio(0);
+    cin.tie(0);
+    cout.tie(0);
 
-pair<int, int> sharkMove(vector<vector<node>> &nodes, int cnt, pair<int, int> shark)
-{
-	node temp = nodes[shark.first][shark.second];
-	int direction = temp.direction;
+    vector<vector<int>> space(4, vector<int>(4, 0));
+    vector<int> fishDirect(FISH_MAX + 1, -1);
 
-	pair<int, int> next = nextPos(direction, cnt, shark.first, shark.second);
+    for (int y = 0; y < SIZE; y++) {
+        for (int x = 0; x < SIZE; x++) {
+            int a, b;
 
-	if (inRange(next.first, next.second))
-	{
-		if (nodes[next.first][next.second].type == FISH)
-		{
-			return { next.first, next.second };
-		}
-		else
-		{
-			return { -1, -1 };
-		}
-	}
-	else
-	{
-		return { -1, -1 };
-	}
-}
+            cin >> a >> b;
 
-int solution(vector<vector<node>> nodes)
-{
-	// fish move
-	for (int i = 1; i <= 16; i++)
-	{
-		fishMove(nodes, i);
-	}
+            space[y][x] = a;
+            fishDirect[a] = b - 1;
+        }
+    }
 
-	// shark move
-	int result = 0;
-	pair<int, int> shark = findShark(nodes);
-	for (int i = 1; i <= 3; i++)
-	{
-		pair<int, int> next = sharkMove(nodes, i, shark);
+    int answer = findAnswer(0, 0, space, fishDirect);
 
-		if (next.first != -1 && next.second != -1)
-		{
-			vector<vector<node>> tempNodes = nodes;
+    cout << answer << '\n';
 
-			int num = tempNodes[next.first][next.second].num;
-			int direction = tempNodes[next.first][next.second].direction;
-
-			tempNodes[next.first][next.second] = { SHARK, num, direction };
-			tempNodes[shark.first][shark.second] = { EMPTY, 0, 0 };
-
-			result = max(result, solution(tempNodes) + num);
-		}
-	}
-
-	return result;
-}
-
-int main()
-{
-	ios_base::sync_with_stdio(0);
-	cin.tie(0);
-
-	vector<vector<node>> nodes(4, vector<node>(4));
-
-	for (int y = 0; y < 4; y++)
-	{
-		for (int x = 0; x < 4; x++)
-		{
-			int a, b;
-			cin >> a >> b;
-			nodes[y][x] = { FISH, a, b - 1 };
-		}
-	}
-
-	// 0,0 shark
-	int answer = nodes[0][0].num;
-	nodes[0][0] = { SHARK, -1, nodes[0][0].direction };
-
-	answer += solution(nodes);
-
-	cout << answer << '\n';
-
-	return 0;
+    return 0;
 }
