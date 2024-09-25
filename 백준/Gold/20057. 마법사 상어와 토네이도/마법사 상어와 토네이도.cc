@@ -1,7 +1,5 @@
 #include <iostream>
 #include <vector>
-#include <utility>
-
 using namespace std;
 
 #define LEFT 0
@@ -9,170 +7,213 @@ using namespace std;
 #define RIGHT 2
 #define UP 3
 
-vector<int> speeds;
+#define MAX 499
+
+int A[MAX][MAX];
 int N;
-int matrix[499][499];
 
-vector<pair<int, int>> sand[4];
-double percent[] = { 0.02, 0.10, 0.07, 0.01, 0.05, 0.10, 0.07, 0.01, 0.02 };
+struct Node {
+	int y;
+	int x;
+};
 
-void init()
-{
-	// 2 10 7 1 5 10 7 1 2
-	sand[0] = {
-		{-2, 0},{-1, -1},{-1, 0},{-1, 1},{0, -2},{1, -1},{1, 0},{1, 1},{2, 0}
-	};
+struct WindNode {
+	int dy;
+	int dx;
+	int percent;
+};
 
-	sand[1] = {
-		{0, -2}, {1, -1}, {0,-1}, {-1,-1}, {2,0}, {1,1}, {0,1}, {-1,1}, {0,2}
-	};
-
-	sand[2] = {
-		{-2, 0}, {-1, 1}, {-1, 0}, {-1, -1}, {0, 2}, {1, 1}, {1, 0}, {1, -1}, {2, 0}
-	};
-
-	sand[3] = {
-		{0, -2}, {-1,-1}, {0, -1}, {1, -1}, {-2, 0}, {-1, 1}, {0,1}, {1,1}, {0,2}
-	};
-}
-
-pair<int, int> nextPosition(int y, int x, int direction)
-{
-	int nextY = y, nextX = x;
-
-	switch (direction)
-	{
-	case LEFT:
-		nextX--;
-		break;
-
-	case DOWN:
-		nextY++;
-		break;
-
-	case RIGHT:
-		nextX++;
-		break;
-
-	case UP:
-		nextY--;
-		break;
+vector<WindNode> wind[4] = {
+	{	// left
+		{-1, 1, 1}, {1, 1, 1},
+		{-2, 0, 2}, {2, 0, 2},
+		{-1, 0, 7}, {1, 0, 7},
+		{-1, -1, 10}, {1, -1, 10},
+		{0, -2, 5}
+	},
+	{	// down
+		{-1, -1, 1}, {-1, 1, 1},
+		{0, -2, 2}, {0, 2, 2},
+		{0, -1, 7}, {0, 1, 7},
+		{1, -1, 10}, {1, 1, 10},
+		{2, 0, 5}
+	},
+	{	// right
+		{-1, -1, 1}, {1, -1, 1},
+		{-2, 0, 2}, {2, 0, 2},
+		{-1, 0, 7}, {1, 0, 7},
+		{-1, 1, 10}, {1, 1, 10},
+		{0, 2, 5}
+	},
+	{	// up
+		{1, -1, 1}, {1, 1, 1},
+		{0, -2, 2}, {0, 2, 2},
+		{0, -1, 7}, {0, 1, 7},
+		{-1, -1, 10}, {-1, 1, 10},
+		{-2, 0, 5}
 	}
+};
 
-	return { nextY, nextX };
+bool inRange(int y, int x) {
+	return (0 <= y && y < N && 0 <= x && x < N);
 }
 
-bool inRange(int y, int x)
-{
-	if (0 <= y && y < N && 0 <= x && x < N)
-	{
-		return true;
-	}
-	return false;
-}
+int calculate(int y, int x, int direction) {
+	int out = 0;
+	int present = A[y][x];
+	int rest = present;
+	A[y][x] = 0;
 
-int answer = 0;
+	for (WindNode &windNode : wind[direction]) {
+		int ny = y + windNode.dy;
+		int nx = x + windNode.dx;
+		int percent = windNode.percent;
 
-void tornado(int startY, int startX)
-{
-	int y = startY, x = startX;
-	int direction[] = { LEFT, DOWN, RIGHT, UP };
-	int index = 0;
-
-	for (int speed : speeds)
-	{
-		int tempDirect = direction[index];
-		index++;
-		index %= 4;
-
-		for (int i = 0; i < speed; i++)
-		{
-			pair<int, int> next = nextPosition(y, x, tempDirect);
-			y = next.first;
-			x = next.second;
-
-			// a 빼고 다 계산
-			int tempSum = 0;
-			for (int j = 0; j < sand[tempDirect].size(); j++)
-			{
-				int dy = y + sand[tempDirect][j].first;
-				int dx = x + sand[tempDirect][j].second;
-				double temp = percent[j] * matrix[y][x];
-				tempSum += (int)temp;
-
-				if (inRange(dy, dx))
-				{
-					matrix[dy][dx] += (int)temp;
-				}
-				else
-				{
-					answer += (int)temp;
-				}
-			}
-
-			// a 계산
-			int dy = y, dx = x;
-
-			switch (tempDirect)
-			{
-			case LEFT:
-				dx--;
-				break;
-			case DOWN:
-				dy++;
-				break;
-			case RIGHT:
-				dx++;
-				break;
-			case UP:
-				dy--;
-				break;
-			}
-
-			if (inRange(dy, dx))
-			{
-				matrix[dy][dx] += (matrix[y][x] - tempSum);
-				matrix[y][x] = 0;
-			}
-			else
-			{
-				answer += (matrix[y][x] - tempSum);
-				matrix[y][x] = 0;
-			}
+		int temp = present * percent / 100;
+		
+		if (!inRange(ny, nx)) {
+			out += temp;
+		} else {
+			A[ny][nx] += temp;
 		}
+		rest -= temp;
 	}
+
+	int ay, ax;
+
+	switch (direction) {
+	case LEFT:
+		ay = y;
+		ax = x - 1;
+		
+		if (!inRange(ay, ax)) {
+			out += rest;
+			
+		} else {
+			A[ay][ax] += rest;
+		}
+		break;
+	case DOWN:
+		ay = y + 1;
+		ax = x;
+
+		if (!inRange(ay, ax)) {
+			out += rest;
+
+		} else {
+			A[ay][ax] += rest;
+		}
+		break;
+	case RIGHT:
+		ay = y;
+		ax = x + 1;
+
+		if (!inRange(ay, ax)) {
+			out += rest;
+
+		} else {
+			A[ay][ax] += rest;
+		}
+		break;
+	case UP:
+		ay = y - 1;
+		ax = x;
+
+		if (!inRange(ay, ax)) {
+			out += rest;
+
+		} else {
+			A[ay][ax] += rest;
+		}
+		break;
+	}
+
+	return out;
 }
 
-int main()
-{
+int nextDirection(int direction) {
+	return (direction + 1) % 4;
+}
+
+Node nextPos(int y, int x, int direction) {
+	switch (direction) {
+	case LEFT:
+		x--;
+		break;
+	case RIGHT:
+		x++;
+		break;
+	case UP:
+		y--;
+		break;
+	case DOWN:
+		y++;
+		break;
+	}
+	return { y, x };
+}
+
+void print() {
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < N; x++) {
+			cout << A[y][x] << " ";
+		}
+		cout << '\n';
+	}
+	cout << '\n';
+}
+
+vector<int> makeCounts() {
+	vector<int> counts;
+
+	for (int number = 1; number <= N - 1; number++) {
+		counts.push_back(number);
+		counts.push_back(number);
+	}
+	counts.push_back(N - 1);
+	return counts;
+}
+
+int solve() {
+	vector<int> counts = makeCounts();
+
+	int y = N / 2;
+	int x = N / 2;
+	int direction = LEFT;
+	
+	int answer = 0;
+
+	for (int count : counts) {
+		for (int i = 0; i < count; i++) {
+			Node next = nextPos(y, x, direction);
+
+			// do something
+			answer += calculate(next.y, next.x, direction);
+		
+			// after
+			y = next.y;
+			x = next.x;
+		}
+
+		direction = nextDirection(direction);
+	}
+
+	return answer;
+}
+
+int main() {
 	ios_base::sync_with_stdio(0);
 	cin.tie(0);
+	cout.tie(0);
 
 	cin >> N;
-
-	for (int y = 0; y < N; y++)
-	{
-		for (int x = 0; x < N; x++)
-		{
-			cin >> matrix[y][x];
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < N; x++) {
+			cin >> A[y][x];
 		}
 	}
 
-	init();
-
-	for (int i = 1; i <= N - 1; i++)
-	{
-		speeds.push_back(i);
-		speeds.push_back(i);
-	}
-	speeds.push_back(N - 1);
-
-	// 가운데
-	int startY = N / 2, startX = N / 2;
-
-	tornado(startY, startX);
-
-	cout << answer << '\n';
+	cout << solve() << '\n';
 
 	return 0;
 }
