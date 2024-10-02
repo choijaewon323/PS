@@ -1,236 +1,276 @@
 #include <iostream>
 #include <vector>
 #include <utility>
-
+#include <queue>
 using namespace std;
 
-// dice index
-#define BELOW 0
-#define SOUTH 1
-#define UP 2
-#define NORTH 3
+#define UP 0
+#define DOWN 1
+#define NORTH 2
+#define SOUTH 3
 #define WEST 4
 #define EAST 5
 
-// dice direction
-#define MEAST 0
-#define MSOUTH 1
-#define MWEST 2
-#define MNORTH 3
+#define DICE_LEFT 0
+#define DICE_UP 1
+#define DICE_RIGHT 2
+#define DICE_DOWN 3
 
-vector<int> dice = { 6, 5, 1, 2, 4, 3 };
+#define CLOCK 0
+#define COUNTER 1
 
-void moveDice(int direction)
-{
-	vector<int> result(6, 0);
+#define MAX 20
 
-	switch (direction)
-	{
-	case MEAST:
-		result[WEST] = dice[BELOW];
-		result[SOUTH] = dice[SOUTH];
-		result[EAST] = dice[UP];
-		result[NORTH] = dice[NORTH];
-		result[UP] = dice[WEST];
-		result[BELOW] = dice[EAST];
-		break;
-
-	case MSOUTH:
-		result[BELOW] = dice[SOUTH];
-		result[SOUTH] = dice[UP];
-		result[UP] = dice[NORTH];
-		result[NORTH] = dice[BELOW];
-		result[WEST] = dice[WEST];
-		result[EAST] = dice[EAST];
-
-		break;
-
-	case MWEST:
-		result[BELOW] = dice[WEST];
-		result[SOUTH] = dice[SOUTH];
-		result[UP] = dice[EAST];
-		result[NORTH] = dice[NORTH];
-		result[WEST] = dice[UP];
-		result[EAST] = dice[BELOW];
-		break;
-
-	case MNORTH:
-		result[BELOW] = dice[NORTH];
-		result[SOUTH] = dice[BELOW];
-		result[UP] = dice[SOUTH];
-		result[NORTH] = dice[UP];
-		result[WEST] = dice[WEST];
-		result[EAST] = dice[EAST];
-		break;
-	}
-
-	dice = result;
-}
-
-int opposite(int direction)
-{
-	switch (direction)
-	{
-	case MEAST:
-		return MWEST;
-	case MSOUTH:
-		return MNORTH;
-	case MWEST:
-		return MEAST;
-	case MNORTH:
-		return MSOUTH;
-	}
-}
-
+vector<int> dice(6);
+int board[MAX][MAX];
+int score[MAX][MAX];
+int dy[] = {-1, 0, 1, 0};
+int dx[] = {0, -1, 0, 1};
 int N, M, K;
-int matrix[21][21];
 
-bool inRange(int y, int x)
-{
-	if (1 <= y && y <= N && 1 <= x && x <= M)
-	{
-		return true;
-	}
-	return false;
+
+void moveLeft() {
+    vector<int> nextDice = dice;
+    
+    nextDice[WEST] = dice[UP];
+    nextDice[UP] = dice[EAST];
+    nextDice[DOWN] = dice[WEST];
+    nextDice[EAST] = dice[DOWN];
+
+    dice = nextDice;
 }
 
-pair<int, int> nextPosition(int y, int x, int direction)
-{
-	int nextY = y, nextX = x;
+void moveRight() {
+    vector<int> nextDice = dice;
+    
+    nextDice[EAST] = dice[UP];
+    nextDice[DOWN] = dice[EAST];
+    nextDice[UP] = dice[WEST];
+    nextDice[WEST] = dice[DOWN];
 
-	switch (direction)
-	{
-	case MEAST:
-		nextX++;
-		break;
-	case MSOUTH:
-		nextY++;
-		break;
-	case MWEST:
-		nextX--;
-		break;
-	case MNORTH:
-		nextY--;
-		break;
-	}
-
-	return { nextY, nextX };
+    dice = nextDice;
 }
 
-int cnt = 0;
+void moveUp() {
+    vector<int> nextDice = dice;
+    
+    nextDice[NORTH] = dice[UP];
+    nextDice[UP] = dice[SOUTH];
+    nextDice[DOWN] = dice[NORTH];
+    nextDice[SOUTH] = dice[DOWN];
 
-vector<vector<bool>> visited;
-
-int dy[] = { -1, 0, 1, 0 };
-int dx[] = { 0, -1, 0, 1 };
-
-void dfs(int startY, int startX, int num)
-{
-	visited[startY][startX] = true;
-
-	cnt++;
-	
-	for (int i = 0; i < 4; i++)
-	{
-		int ny = startY + dy[i];
-		int nx = startX + dx[i];
-
-		if (inRange(ny, nx) && !visited[ny][nx] && matrix[ny][nx] == num)
-		{
-			dfs(ny, nx, num);
-		}
-	}
+    dice = nextDice;
 }
 
-int rollClock(int direction)
-{
-	switch (direction)
-	{
-	case MEAST:
-		return MSOUTH;
-	case MSOUTH:
-		return MWEST;
-	case MWEST:
-		return MNORTH;
-	case MNORTH:
-		return MEAST;
-	}
+void moveDown() {
+    vector<int> nextDice = dice;
+    
+    nextDice[SOUTH] = dice[UP];
+    nextDice[DOWN] = dice[SOUTH];
+    nextDice[UP] = dice[NORTH];
+    nextDice[NORTH] = dice[DOWN];
+
+    dice = nextDice;
 }
 
-int rollCounter(int direction)
-{
-	switch (direction)
-	{
-	case MEAST:
-		return MNORTH;
-	case MSOUTH:
-		return MEAST;
-	case MWEST:
-		return MSOUTH;
-	case MNORTH:
-		return MWEST;
-	}
+void init() {
+    dice[UP] = 1;
+    dice[NORTH] = 2;
+    dice[SOUTH] = 5;
+    dice[EAST] = 3;
+    dice[WEST] = 4;
+    dice[DOWN] = 6; 
 }
 
-int main()
-{
-	ios_base::sync_with_stdio(0);
-	cin.tie(0);
+bool inRange(int y, int x) {
+    return (0 <= y && y < N && 0 <= x && x < M);
+}
 
-	cin >> N >> M >> K;
+int oppositeDirection(int direction) {
+    switch (direction) {
+    case DICE_LEFT:
+        return DICE_RIGHT;
+    case DICE_RIGHT:
+        return DICE_LEFT;
+    case DICE_UP:
+        return DICE_DOWN;
+    case DICE_DOWN:
+        return DICE_UP;    
+    }
+    return -1;
+}
 
-	for (int y = 1; y <= N; y++)
-	{
-		for (int x = 1; x <= M; x++)
-		{
-			cin >> matrix[y][x];
-		}
-	}
+pair<int, int> nextMove(int y, int x, int direction) {
+    int ny = y;
+    int nx = x;
+    
+    switch (direction) {
+    case DICE_LEFT:
+        nx--;
+        moveLeft();
+        break;
+    case DICE_RIGHT:
+        nx++;
+        moveRight();
+        break;
+    case DICE_UP:
+        ny--;
+        moveUp();
+        break;
+    case DICE_DOWN:
+        ny++;
+        moveDown();
+        break;
+    }
 
-	// init
-	int direction = MEAST;
-	int answer = 0;
-	int y = 1, x = 1;
+    return {ny, nx};
+}
 
-	for (int i = 0; i < K; i++)
-	{
-		// 1
-		pair<int, int> next = nextPosition(y, x, direction);
-		if (!inRange(next.first, next.second))
-		{
-			direction = opposite(direction);
-			next = nextPosition(y, x, direction);
-			y = next.first;
-			x = next.second;
-			moveDice(direction);
-		}
-		else
-		{
-			y = next.first;
-			x = next.second;
-			moveDice(direction);
-		}
-		
+bool canMove(int y, int x, int direction) {
+    int ny = y;
+    int nx = x;
+    
+    switch (direction) {
+    case DICE_LEFT:
+        nx--;
+        break;
+    case DICE_RIGHT:
+        nx++;
+        break;
+    case DICE_UP:
+        ny--;
+        break;
+    case DICE_DOWN:
+        ny++;
+        break;
+    }
 
-		// 2
-		cnt = 0;
-		visited = vector<vector<bool>>(N + 1, vector<bool>(M + 1, false));
-		dfs(y, x, matrix[y][x]);
-		answer += cnt * matrix[y][x];
+    if (inRange(ny, nx)) {
+        return true;
+    }
+    return false;
+}
 
-		// 3
-		int below = dice[BELOW];
-		if (below > matrix[y][x])
-		{
-			direction = rollClock(direction);
-		}
-		else if (below < matrix[y][x])
-		{
-			direction = rollCounter(direction);
-		}
-	}
+int getDown() {
+    return dice[DOWN];
+}
 
-	cout << answer << '\n';
+void bfs(int startY, int startX) {
+    int presentScore = board[startY][startX];
+    int cnt = 1;
+    vector<vector<bool>> visited(N, vector<bool>(M, false));
+    queue<pair<int, int>> q;
 
-	return 0;
+    visited[startY][startX] = true;
+    q.push({startY, startX});
+    vector<pair<int, int>> prevPos;
+    prevPos.push_back({startY, startX});
+
+    while (!q.empty()) {
+        int y = q.front().first;
+        int x = q.front().second;
+        q.pop();
+
+        for (int i = 0; i < 4; i++) {
+            int ny = y + dy[i];
+            int nx = x + dx[i];
+
+            if (inRange(ny, nx) &&
+                board[ny][nx] == presentScore &&
+                !visited[ny][nx]) {
+                    cnt++;
+                    visited[ny][nx] = true;
+                    q.push({ny, nx});
+                    prevPos.push_back({ny, nx});
+                }
+        }
+    }
+
+    int result = presentScore * cnt;
+    for (pair<int, int>& pos : prevPos) {
+        score[pos.first][pos.second] = result;
+    }
+}
+
+void initScore() {
+    for (int y = 0; y < N; y++) {
+        for (int x = 0; x < M; x++) {
+            if (score[y][x] == 0) {
+                bfs(y, x);
+            }
+        }
+    }
+}
+
+int rollDirectionClock(int direction) {
+    return (direction + 1) % 4;
+}
+
+int rollDirectionCounter(int direction) {
+    direction--;
+    direction %= 4;
+    if (direction < 0) {
+        direction += 4;
+    }
+    return direction;
+}
+
+void printScore() {
+    for (int y = 0; y < N; y++) {
+        for (int x = 0; x < M; x++) {
+            cout << score[y][x] << " ";
+        }
+        cout << '\n';
+    }
+    cout << '\n';
+}
+
+int solve() {
+    initScore();
+    //printScore();
+    int y = 0;
+    int x = 0;
+    int acc = 0;
+    int direction = DICE_RIGHT;
+
+    for (int i = 0; i < K; i++) {
+        if (!canMove(y, x, direction)) {
+            direction = oppositeDirection(direction);
+        }
+
+        pair<int, int> nextPos = nextMove(y, x, direction);
+        
+        int tempScore = board[nextPos.first][nextPos.second];
+        acc += score[nextPos.first][nextPos.second];
+        int diceNumber = getDown();
+
+        y = nextPos.first;
+        x = nextPos.second;
+
+        if (diceNumber > tempScore) {
+            direction = rollDirectionClock(direction);
+        } else if (diceNumber < tempScore) {
+            direction = rollDirectionCounter(direction);
+        }
+    }
+
+    return acc;
+}
+
+int main() {
+    ios_base::sync_with_stdio(0);
+    cin.tie(0);
+    cout.tie(0);
+
+    cin >> N >> M >> K;
+    for (int y = 0; y < N; y++) {
+        for (int x = 0; x < M; x++) {
+            cin >> board[y][x];
+        }
+    }
+
+    init();
+    cout << solve() << '\n';
+
+    return 0;
 }
