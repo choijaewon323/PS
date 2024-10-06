@@ -1,215 +1,195 @@
 #include <iostream>
-#include <utility>
 #include <vector>
-
+#include <utility>
 using namespace std;
 
-#define LEFT 1
-#define UPLEFT 2
-#define UP 3
-#define UPRIGHT 4
-#define RIGHT 5
-#define DOWNRIGHT 6
-#define DOWN 7
-#define DOWNLEFT 8
+#define LEFT 0
+#define UPLEFT 1
+#define UP 2
+#define UPRIGHT 3
+#define RIGHT 4
+#define DOWNRIGHT 5
+#define DOWN 6
+#define DOWNLEFT 7
 
+vector<vector<int>> bucket;
+vector<vector<bool>> cloud;
 int N, M;
-int buckets[50][50];
-pair<int, int> moveCommand[100];
-vector<pair<int, int>> clouds;
-int dy[] = { -1, 1, 1, -1 };
-int dx[] = { -1, -1, 1, 1 };
+int dy[] = { -1, -1, 1, 1 };
+int dx[] = { -1, 1, -1, 1 };
 
-bool inRange(int y, int x)
-{
-	if (0 <= y && y < N && 0 <= x && x < N)
-	{
-		return true;
-	}
-	return false;
+void cloudInit() {
+	cloud[N - 1][0] = true;
+	cloud[N - 1][1] = true;
+	cloud[N - 2][0] = true;
+	cloud[N - 2][1] = true;
 }
 
-pair<int, int> nextPosition(int y, int x, int direction, int speed)
-{
-	int nextY = y, nextX = x;
-
-	switch (direction)
-	{
+pair<int, int> nextPos(int y, int x, int d, int s) {
+	switch (d) {
 	case LEFT:
-		nextX = (nextX - speed) % N;
-		if (nextX < 0)
-		{
-			nextX += N;
-		}
-		
+		x -= s;
 		break;
-
 	case UPLEFT:
-		nextY = (nextY - speed) % N;
-		if (nextY < 0)
-		{
-			nextY += N;
-		}
-		nextX = (nextX - speed) % N;
-		if (nextX < 0)
-		{
-			nextX += N;
-		}
+		y -= s;
+		x -= s;
 		break;
-
 	case UP:
-		nextY = (nextY - speed) % N;
-		if (nextY < 0)
-		{
-			nextY += N;
-		}
+		y -= s;
 		break;
-
 	case UPRIGHT:
-		nextY = (nextY - speed) % N;
-		if (nextY < 0)
-		{
-			nextY += N;
-		}
-		nextX = (nextX + speed) % N;
+		y -= s;
+		x += s;
 		break;
-
 	case RIGHT:
-		nextX = (nextX + speed) % N;
+		x += s;
 		break;
-
 	case DOWNRIGHT:
-		nextY = (nextY + speed) % N;
-		nextX = (nextX + speed) % N;
+		y += s;
+		x += s;
 		break;
-
 	case DOWN:
-		nextY = (nextY + speed) % N;
+		y += s;
 		break;
-
 	case DOWNLEFT:
-		nextY = (nextY + speed) % N;
-		nextX = (nextX - speed) % N;
-		if (nextX < 0)
-		{
-			nextX += N;
-		}
+		y += s;
+		x -= s;
 		break;
 	}
 
-	return { nextY, nextX };
+	y %= N;
+	x %= N;
+
+	if (y < 0) {
+		y += N;
+	}
+	if (x < 0) {
+		x += N;
+	}
+
+	return { y, x };
 }
 
-bool isDeleted(int y, int x, vector<pair<int, int>> &tempPosition)
-{
-	for (auto &pos : tempPosition)
-	{
-		if (y == pos.first && x == pos.second)
-		{
-			return true;
+void moveCloud(int d, int s) {
+	vector<vector<bool>> nextCloud(N, vector<bool>(N, false));
+	
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < N; x++) {
+			if (cloud[y][x]) {
+				pair<int, int> next = nextPos(y, x, d, s);
+
+				nextCloud[next.first][next.second] = true;
+			}
 		}
 	}
 
-	return false;
+	cloud = nextCloud;
 }
 
-int main()
-{
+void plusWater() {
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < N; x++) {
+			if (cloud[y][x]) {
+				bucket[y][x]++;
+			}
+		}
+	}
+}
+
+bool inRange(int y, int x) {
+	return (0 <= y && y < N && 0 <= x && x < N);
+}
+
+void waterMagic() {
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < N; x++) {
+			if (cloud[y][x]) {
+				int cnt = 0;
+
+				for (int i = 0; i < 4; i++) {
+					int ny = y + dy[i];
+					int nx = x + dx[i];
+
+					if (inRange(ny, nx) && bucket[ny][nx] >= 1) {
+						cnt++;
+					}
+				}
+
+				bucket[y][x] += cnt;
+			}
+		}
+	}
+}
+
+void makeCloud() {
+	vector<vector<bool>> nextCloud(N, vector<bool>(N, false));
+
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < N; x++) {
+			if (cloud[y][x]) {
+				continue;
+			}
+
+			if (bucket[y][x] >= 2) {
+				nextCloud[y][x] = true;
+				bucket[y][x] -= 2;
+			}
+		}
+	}
+
+	cloud = nextCloud;
+}
+
+long long calculateResult() {
+	long long result = 0;
+
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < N; x++) {
+			result += bucket[y][x];
+		}
+	}
+
+	return result;
+}
+
+void printCloud() {
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < N; x++) {
+			cout << cloud[y][x] << " ";
+		}
+		cout << '\n';
+	}
+	cout << '\n';
+}
+
+int main() {
 	ios_base::sync_with_stdio(0);
 	cin.tie(0);
+	cout.tie(0);
 
 	cin >> N >> M;
+	bucket = vector<vector<int>>(N, vector<int>(N));
+	cloud = vector<vector<bool>>(N, vector<bool>(N, false));
 
-	for (int y = 0; y < N; y++)
-	{
-		for (int x = 0; x < N; x++)
-		{
-			cin >> buckets[y][x];
+	for (int y = 0; y < N; y++) {
+		for (int x = 0; x < N; x++) {
+			cin >> bucket[y][x];
 		}
 	}
-
-	for (int i = 0; i < M; i++)
-	{
+	
+	cloudInit();
+	
+	for (int i = 0; i < M; i++) {
 		int d, s;
 
 		cin >> d >> s;
-
-		moveCommand[i] = { d,s };
+		moveCloud(d - 1, s);
+		plusWater();
+		waterMagic();
+		makeCloud();
 	}
-
-	// 비바라기
-	clouds.push_back({ N - 1, 0 });
-	clouds.push_back({ N - 1, 1 });
-	clouds.push_back({ N - 2, 0 });
-	clouds.push_back({ N - 2, 1 });
-
-	for (int i = 0; i < M; i++)
-	{
-		pair<int, int> presentCommand = moveCommand[i];
-		int d = presentCommand.first;
-		int s = presentCommand.second;
-		vector<pair<int, int>> tempPosition;
-
-		// 1 구름 이동, 2 물의 양 증가
-		for (auto &cloud : clouds)
-		{
-			pair<int, int> next = nextPosition(cloud.first, cloud.second, d, s);
-			cloud.first = next.first;
-			cloud.second = next.second;
-			buckets[cloud.first][cloud.second] += 1;
-			tempPosition.push_back({ cloud.first, cloud.second });
-		}
-		
-		// 3 구름 사라짐
-		clouds.clear();
-
-		// 4 물복사버그
-		for (auto &pos : tempPosition)
-		{
-			int y = pos.first;
-			int x = pos.second;
-			int cnt = 0;
-
-			for (int i = 0; i < 4; i++)
-			{
-				int nextY = y + dy[i];
-				int nextX = x + dx[i];
-
-				if (inRange(nextY, nextX) && buckets[nextY][nextX] > 0)
-				{
-					cnt++;
-				}
-			}
-
-			buckets[y][x] += cnt;
-		}
-
-		// 5 구름 생성, 물의 양 2 감소
-		for (int y = 0; y < N; y++)
-		{
-			for (int x = 0; x < N; x++)
-			{
-				if (buckets[y][x] >= 2 && !isDeleted(y, x, tempPosition))
-				{
-					clouds.push_back({ y, x });
-					buckets[y][x] -= 2;
-				}
-			}
-		}
-	}
-
-	// 물의 합
-	int answer = 0;
-
-	for (int y = 0; y < N; y++)
-	{
-		for (int x = 0; x < N; x++)
-		{
-			answer += buckets[y][x];
-		}
-	}
-
-	cout << answer << '\n';
+	
+	cout << calculateResult() << '\n';
 
 	return 0;
 }
