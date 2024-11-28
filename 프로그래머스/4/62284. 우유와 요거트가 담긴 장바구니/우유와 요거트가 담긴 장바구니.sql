@@ -1,20 +1,13 @@
 select
-    distinct cart_id
+    cart_id
 from
     cart_products
 where
-    cart_id in (select
-                    cart_id
-                from
-                    cart_products
-                where
-                    name = "Milk") and
-    cart_id in (select
-                    cart_id
-                from
-                    cart_products
-                where
-                    name = "Yogurt")
+    name in ('Milk', 'Yogurt')
+group by
+    cart_id
+having
+    count(distinct name) >= 2
 order by
     cart_id asc
 ;
