@@ -1,48 +1,60 @@
 #include <iostream>
 #include <vector>
-
+#include <algorithm>
 using namespace std;
 
-#define MAX 1000000
+#define IMPOSSIBLE 10001
+#define INIT -1
 
-int dp[MAX + 1];
+int dp[100001];
+vector<int> coins;
+int n, k;
 
 void init() {
-	for (int i = 0; i < MAX + 1; i++) {
-		dp[i] = MAX;
+	for (int i = 0; i <= 10000; i++) {
+		dp[i] = INIT;
 	}
 }
 
+int solve(int num) {
+	if (dp[num] != INIT) {
+		return dp[num];
+	}
+	
+	int result = IMPOSSIBLE;
+	
+	for (int coin : coins) {
+		if (num - coin >= 0) {
+			result = min(result, solve(num - coin) + 1);
+		}
+	}
+	return dp[num] = result;
+}
+
 int main() {
-	int n, k;
-	vector<int> coin;
-	cin >> n >> k;
+	ios_base::sync_with_stdio(0);
+	cin.tie(0);
 
 	init();
 
+	cin >> n >> k;
+
 	for (int i = 0; i < n; i++) {
-		int temp;
-		cin >> temp;
-		coin.push_back(temp);
-		dp[temp] = 1;
+		int tmp;
+		cin >> tmp;
+		coins.push_back(tmp);
+		dp[tmp] = 1;
 	}
+	
+	dp[0] = IMPOSSIBLE;
 
-	for (int i = 1; i < MAX + 1; i++) {
-		for (int c : coin) {
-			int prev = i - c;
-			if (prev <= 0) {
-				continue;
-			}
-			dp[i] = min(dp[prev] + 1, dp[i]);
-		}
-	}
+	int answer = solve(k);
 
-	if (dp[k] == MAX) {
+	if (answer == IMPOSSIBLE) {
 		cout << -1 << '\n';
-
-		return 0;
+	} else {
+		cout << answer << '\n';
 	}
-	cout << dp[k] << '\n';
 
 	return 0;
 }
