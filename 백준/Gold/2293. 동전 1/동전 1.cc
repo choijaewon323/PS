@@ -1,31 +1,30 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-
 using namespace std;
 
-#define MAX 10000
-
-int dp[MAX + 1];
+vector<int> coins;
+int dp[10000 + 1];
+int n, k;
 
 int main() {
-	int n, k;
-	vector<int> coin;
+	ios_base::sync_with_stdio(0);
+	cin.tie(0);
 
 	cin >> n >> k;
 
 	for (int i = 0; i < n; i++) {
-		int temp;
-
-		cin >> temp;
-		coin.push_back(temp);
+		int tmp;
+		cin >> tmp;
+		coins.push_back(tmp);
 	}
 
-	dp[0] = 1;
+	sort(coins.begin(), coins.end());
 
-	for (int i = 0; i < coin.size(); i++) {
-		for (int j = coin[i]; j <= k; j++) {
-			dp[j] += dp[j - coin[i]];
+	dp[0] = 1;
+	for (int coin : coins) {
+		for (int i = coin; i <= k; i++) {
+			dp[i] += dp[i - coin];
 		}
 	}
 
