@@ -1,76 +1,69 @@
 #include <iostream>
 #include <vector>
-#include <queue>
-#include <utility>
 #include <algorithm>
-
+#include <utility>
 using namespace std;
 
-int n, result = 1;
-int matrix[500][500];
-int dy[] = { -1, 0, 1, 0 };
-int dx[] = { 0, -1, 0, 1 };
-int dp[500][500];
+#define MAX 500
 
-bool inRange(int y, int x)
-{
-	if (0 <= y && y < n && 0 <= x && x < n)
-	{
-		return true;
-	}
-	return false;
-}
+int input[MAX][MAX];
+int dp[MAX][MAX];
+int n;
 
-int func(int startY, int startX)
-{
-	if (dp[startY][startX] != 0)
-	{
-		return dp[startY][startX];
-	}
-
-	dp[startY][startX] = 1;
-
-	for (int i = 0; i < 4; i++)
-	{
-		int nextY = startY + dy[i];
-		int nextX = startX + dx[i];
-
-		if (inRange(nextY, nextX))
-		{
-			if (matrix[nextY][nextX] > matrix[startY][startX])
-			{
-				dp[startY][startX] = max(dp[startY][startX], func(nextY, nextX) + 1);
-			}
+void init() {
+	for (int y = 0; y < n; y++) {
+		for (int x = 0; x < n; x++) {
+			dp[y][x] = -1;
 		}
 	}
-
-	return dp[startY][startX];
 }
 
-int main()
-{
+int dy[] = { -1, 0, 1, 0 };
+int dx[] = { 0, -1, 0, 1 };
+
+bool inRange(int y, int x) {
+	return (0 <= y && y < n && 0 <= x && x < n);
+}
+
+int solve(int y, int x) {
+	if (dp[y][x] != -1) {
+		return dp[y][x];
+	}
+
+	int result = 0;
+
+	for (int i = 0; i < 4; i++) {
+		int ny = y + dy[i];
+		int nx = x + dx[i];
+
+		if (inRange(ny, nx) && input[ny][nx] > input[y][x]) {
+			result = max(result, solve(ny, nx) + 1);
+		}
+	}
+	
+	return dp[y][x] = result;
+}
+
+int main() {
 	ios_base::sync_with_stdio(0);
 	cin.tie(0);
 
 	cin >> n;
-
-	for (int y = 0; y < n; y++)
-	{
-		for (int x = 0; x < n; x++)
-		{
-			cin >> matrix[y][x];
+	for (int y = 0; y < n; y++) {
+		for (int x = 0; x < n; x++) {
+			cin >> input[y][x];
 		}
 	}
 
-	for (int y = 0; y < n; y++)
-	{
-		for (int x = 0; x < n; x++)
-		{
-			result = max(func(y, x), result);
+	init();
+
+	int answer = 0;
+	for (int y = 0; y < n; y++) {
+		for (int x = 0; x < n; x++) {
+			answer = max(answer, solve(y, x));
 		}
 	}
-
-	cout << result << '\n';
+	cout << answer + 1 << '\n';
 
 	return 0;
 }
