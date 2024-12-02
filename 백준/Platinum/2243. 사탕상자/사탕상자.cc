@@ -2,6 +2,17 @@
 #include <algorithm>
 using namespace std;
 
+/*
+    사탕 : 1 가장 맛남, 1,000,000 가장 맛없음
+
+    n번째로 맛난 사탕 꺼내줌
+
+    구간은 뭘 나타내야 하나?
+        seg의 리프 노드 : 사탕의 맛이 i인 사탕의 개수
+
+    
+*/
+
 #define MAX 1000000
 
 typedef long long ll;
@@ -10,17 +21,13 @@ ll segment[MAX * 4 + 1];
 int n;
 
 int query(int node, int start, int end, ll rank) {
-    if (rank > segment[node]) {
-        return -1; // 잘못된 rank 요청 처리
-    }
-
     if (start == end) {
         return start;
     }
 
     int mid = (start + end) / 2;
     ll cntInSection = segment[node * 2];
-
+    
     if (cntInSection >= rank) {
         return query(node * 2, start, mid, rank);
     } else {
@@ -33,14 +40,10 @@ void update(int node, int start, int end, int index, int diff) {
         return;
     }
 
-    if (segment[node] + diff < 0) {
-        return; // 음수로 내려가는 업데이트는 무시
-    }
-
     segment[node] += diff;
 
+    int mid = (start + end) / 2;
     if (start != end) {
-        int mid = (start + end) / 2;
         update(node * 2, start, mid, index, diff);
         update(node * 2 + 1, mid + 1, end, index, diff);
     }
@@ -51,8 +54,6 @@ int main() {
     cin.tie(0);
     cout.tie(0);
 
-    fill(segment, segment + MAX * 4 + 1, 0); // 세그먼트 트리 초기화
-
     cin >> n;
     for (int i = 0; i < n; i++) {
         int A, B, C;
@@ -62,9 +63,9 @@ int main() {
         if (A == 1) {   // pop
             cin >> B;
 
-            int taste = query(1, 1, 1000000, B);
-            cout << taste << '\n';
-            update(1, 1, 1000000, taste, -1);
+            int ans = query(1, 1, 1000000, B);
+            cout << ans << '\n';
+            update(1, 1, 1000000, ans, -1);
         } else {
             cin >> B >> C;
 
