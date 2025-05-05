@@ -7,7 +7,6 @@ public class Main {
     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(System.out));
     StringTokenizer st;
     int N;
-    int arr[][];
 
     public static void main(String[] args) throws IOException {
         new Main().solve();
@@ -15,8 +14,6 @@ public class Main {
 
     public void solve() throws IOException {
         N = Integer.parseInt(reader.readLine());
-
-        arr = new int[N][N];
 
         PriorityQueue<Integer> pq = new PriorityQueue<>((c1, c2) -> {
             if (c1 < c2) {
